@@ -33,7 +33,7 @@ public abstract class ApiTestBase : IAsyncLifetime
     protected HttpClient Client { get; private set; } = null!;
     protected string AuthToken { get; private set; } = string.Empty;
     protected int UserId { get; private set; } = 0;
-    
+
     private SqliteConnection _connection = null!;
 
     public async Task InitializeAsync()
