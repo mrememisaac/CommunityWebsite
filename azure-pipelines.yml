@@ -1,0 +1,165 @@
+# Community Website - Azure DevOps Pipeline
+# Alternative CI/CD configuration for Azure DevOps
+# Performs: build, test, code coverage, and artifact publishing
+
+trigger:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+
+pr:
+  branches:
+    include:
+      - main
+      - master
+
+variables:
+  dotnetVersion: "8.0.x"
+  buildConfiguration: "Release"
+  solutionPath: "CommunityWebsite.sln"
+  webProjectPath: "src/CommunityWebsite.Web/CommunityWebsite.Web.csproj"
+
+stages:
+  - stage: Build
+    displayName: "Build & Test"
+    jobs:
+      - job: BuildJob
+        displayName: "Build and Test"
+        pool:
+          vmImage: "ubuntu-latest"
+
+        steps:
+          - task: UseDotNet@2
+            displayName: "Setup .NET SDK"
+            inputs:
+              packageType: "sdk"
+              version: "$(dotnetVersion)"
+
+          - task: DotNetCoreCLI@2
+            displayName: "Restore NuGet packages"
+            inputs:
+              command: "restore"
+              projects: "$(solutionPath)"
+              feedsToUse: "select"
+
+          - task: DotNetCoreCLI@2
+            displayName: "Build solution"
+            inputs:
+              command: "build"
+              projects: "$(solutionPath)"
+              arguments: "--configuration $(buildConfiguration) --no-restore"
+
+          - task: DotNetCoreCLI@2
+            displayName: "Run unit tests"
+            inputs:
+              command: "test"
+              projects: "**/*Tests.csproj"
+              arguments: '--configuration $(buildConfiguration) --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"'
+              publishTestResults: true
+
+          - task: PublishCodeCoverageResults@2
+            displayName: "Publish code coverage"
+            inputs:
+              summaryFileLocation: "$(Agent.TempDirectory)/**/coverage.cobertura.xml"
+            condition: succeededOrFailed()
+
+  - stage: Publish
+    displayName: "Publish Artifacts"
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: PublishJob
+        displayName: "Publish Web Application"
+        pool:
+          vmImage: "ubuntu-latest"
+
+        steps:
+          - task: UseDotNet@2
+            displayName: "Setup .NET SDK"
+            inputs:
+              packageType: "sdk"
+              version: "$(dotnetVersion)"
+
+          - task: DotNetCoreCLI@2
+            displayName: "Restore NuGet packages"
+            inputs:
+              command: "restore"
+              projects: "$(webProjectPath)"
+
+          - task: DotNetCoreCLI@2
+            displayName: "Publish web project"
+            inputs:
+              command: "publish"
+              projects: "$(webProjectPath)"
+              arguments: "--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/web"
+              publishWebProjects: false
+              zipAfterPublish: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: "Publish artifact"
+            inputs:
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)/web"
+              ArtifactName: "community-website"
+              publishLocation: "Container"
+
+  - stage: Docker
+    displayName: "Build Docker Image"
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: DockerJob
+        displayName: "Build and Push Docker Image"
+        pool:
+          vmImage: "ubuntu-latest"
+
+        steps:
+          - task: Docker@2
+            displayName: "Build Docker image"
+            inputs:
+              command: "build"
+              Dockerfile: "**/Dockerfile"
+              tags: |
+                $(Build.BuildId)
+                latest
+
+          # Uncomment to push to Azure Container Registry
+          # - task: Docker@2
+          #   displayName: 'Push to ACR'
+          #   inputs:
+          #     containerRegistry: 'your-acr-connection'
+          #     repository: 'community-website'
+          #     command: 'push'
+          #     tags: |
+          #       $(Build.BuildId)
+          #       latest
+
+  # Optional: Deploy to Azure App Service
+  # - stage: Deploy
+  #   displayName: 'Deploy to Azure'
+  #   dependsOn: Publish
+  #   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  #   jobs:
+  #     - deployment: DeployWeb
+  #       displayName: 'Deploy to Azure App Service'
+  #       environment: 'production'
+  #       pool:
+  #         vmImage: 'ubuntu-latest'
+  #       strategy:
+  #         runOnce:
+  #           deploy:
+  #             steps:
+  #               - task: DownloadBuildArtifacts@1
+  #                 inputs:
+  #                   buildType: 'current'
+  #                   downloadType: 'single'
+  #                   artifactName: 'community-website'
+  #                   downloadPath: '$(System.ArtifactsDirectory)'
+  #
+  #               - task: AzureWebApp@1
+  #                 inputs:
+  #                   azureSubscription: 'your-azure-subscription'
+  #                   appType: 'webApp'
+  #                   appName: 'your-app-name'
+  #                   package: '$(System.ArtifactsDirectory)/community-website/*.zip'
