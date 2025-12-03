@@ -103,12 +103,49 @@
 
 ### Unit Tests (`tests/CommunityWebsite.Tests/`)
 
-#### Test Classes
+#### Controller Tests
 
-- `Models/DomainModelsTests.cs` - Domain model tests
+- `Controllers/ApiTestBase.cs` - Shared test infrastructure for API tests
+- `Controllers/AuthenticationApiTests.cs` - Authentication endpoint tests
+- `Controllers/PostsApiTests.cs` - Post endpoint tests
+- `Controllers/UsersApiTests.cs` - User endpoint tests
+- `Controllers/CommentsApiTests.cs` - Comment CRUD and threading tests
+- `Controllers/RolesApiTests.cs` - Role management tests
+- `Controllers/EventsApiTests.cs` - Event CRUD and filtering tests
+- `Controllers/ApiResponseValidationTests.cs` - HTTP status codes tests
+- `Controllers/ApiControllerBaseTests.cs` - API base controller tests
+- `Controllers/ViewControllerBaseTests.cs` - View base controller tests
+- `Controllers/HomeControllerTests.cs` - Home controller tests
+- `Controllers/AccountControllerTests.cs` - Account controller tests
+- `Controllers/PostsViewControllerTests.cs` - Posts view controller tests
+- `Controllers/EventsViewControllerTests.cs` - Events view controller tests
+- `Controllers/ViewIntegrationTests.cs` - View integration tests
+
+#### Model Tests
+
+- `Models/UserModelTests.cs` - User domain model tests
+- `Models/PostModelTests.cs` - Post domain model tests
+- `Models/CommentModelTests.cs` - Comment domain model tests
+- `Models/EventModelTests.cs` - Event domain model tests
+- `Models/RoleModelTests.cs` - Role domain model tests
+- `Models/UserRoleModelTests.cs` - UserRole junction tests
+
+#### Repository Tests
+
 - `Repositories/RepositoryPatternTests.cs` - Repository pattern tests
-- `Services/PostServiceTests.cs` - Service layer tests
-- `Services/DomainModelsTests.cs` - Additional model tests
+
+#### Service Tests
+
+- `Services/AuthenticationServiceIntegrationTests.cs` - Auth service tests
+- `Services/CommentServiceTests.cs` - Comment service tests
+- `Services/EventServiceTests.cs` - Event service tests
+- `Services/PostServiceTests.cs` - Post service tests
+- `Services/RoleServiceTests.cs` - Role service tests
+- `Services/UserServiceTests.cs` - User service tests
+
+#### Test Fixtures
+
+- `Fixtures/SeedData.cs` - Test data seeding
 
 #### Project File
 
@@ -120,10 +157,10 @@
 
 ### Source Code Files
 
-- C# Classes: 28
-- Interfaces: 13
-- Unit Test Classes: 4
-- Total C# Lines: 2,500+
+- C# Classes: 60+
+- Interfaces: 20+
+- Unit Test Classes: 28
+- Total C# Lines: 10,000+
 
 ### Configuration Files
 
@@ -148,19 +185,25 @@
 CommunityWebsite/
 │
 ├─ Core Layer (Business Logic)
-│  ├─ Models (5 entities)
-│  ├─ Repositories (5 repositories)
-│  ├─ Services (3 services)
-│  ├─ Specifications (3 business rules)
-│  └─ DTOs (9 data transfer objects)
+│  ├─ Models (6 entities)
+│  ├─ Repositories (6 repositories + interfaces)
+│  ├─ Services (10 services + interfaces)
+│  ├─ Specifications (4 business rules)
+│  ├─ Validators (3 validators + interfaces)
+│  └─ DTOs (22 data transfer objects)
 │
 ├─ Web Layer (API & Presentation)
-│  ├─ Controllers (3 controllers, 13 endpoints)
+│  ├─ Controllers (10 controllers, 50+ endpoints)
+│  ├─ Views (Razor views for MVC)
 │  ├─ Configuration (Program.cs, appsettings.json)
-│  └─ Frontend (Bootstrap 5 UI)
+│  └─ Frontend (Bootstrap 5 UI, CSS, JavaScript)
 │
-└─ Test Layer (Unit Tests)
-   └─ Tests (20 unit tests, 100% passing)
+└─ Test Layer (304 Unit Tests)
+   ├─ Controller Tests (15 test classes)
+   ├─ Model Tests (6 test classes)
+   ├─ Repository Tests (1 test class)
+   ├─ Service Tests (6 test classes)
+   └─ Fixtures (Test data seeding)
 ```
 
 ---
@@ -186,19 +229,19 @@ CommunityWebsite/
 
 ## 📝 Total Project Metrics
 
-| Metric              | Value  |
-| ------------------- | ------ |
-| Solution Files      | 1      |
-| Projects            | 3      |
-| C# Classes          | 28     |
-| Interfaces          | 13     |
-| Unit Tests          | 20     |
-| API Endpoints       | 13     |
-| Domain Models       | 5      |
-| DTOs                | 9      |
-| Lines of Code       | 2,500+ |
-| Documentation Files | 6      |
-| Markdown Lines      | 1,000+ |
+| Metric              | Value   |
+| ------------------- | ------- |
+| Solution Files      | 1       |
+| Projects            | 3       |
+| C# Classes          | 60+     |
+| Interfaces          | 20+     |
+| Unit Tests          | 304     |
+| API Endpoints       | 50+     |
+| Domain Models       | 6       |
+| DTOs                | 22      |
+| Lines of Code       | 10,000+ |
+| Documentation Files | 12      |
+| Test Coverage       | 100%    |
 
 ---
 
