@@ -1,0 +1,120 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        dotnet-version: ['8.0.x']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+        cache: true
+        cache-dependency-path: '**/packages.lock.json'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Run unit tests
+      run: dotnet test --no-build --verbosity normal --configuration Release --logger "trx;LogFileName=test-results.trx"
+    
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Test Results
+        path: '**/test-results.trx'
+        reporter: 'dotnet trx'
+    
+    - name: Code Coverage
+      run: dotnet test /p:CollectCoverage=true /p:CoverageFormat=opencover /p:CoverageReportFormat=sarif --no-build --configuration Release
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.opencover.xml
+        fail_ci_if_error: false
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Run dependency security check
+      run: dotnet tool install -g snyk
+    
+    - name: Snyk authentication
+      run: snyk auth ${{ secrets.SNYK_TOKEN }}
+      continue-on-error: true
+    
+    - name: Snyk test
+      run: snyk test --all-projects --severity-threshold=high
+      continue-on-error: true
+
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Analyze with StyleCop
+      run: dotnet build --no-restore /p:TreatWarningsAsErrors=true
+      continue-on-error: true
+
+  publish:
+    needs: [build-test, security-scan, code-quality]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Build for production
+      run: dotnet build --configuration Release
+    
+    - name: Publish
+      run: dotnet publish src/CommunityWebsite.Web/CommunityWebsite.Web.csproj -c Release -o ./publish
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: publish
+        path: ./publish
