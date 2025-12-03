@@ -1,0 +1,205 @@
+@model CreatePostRequest
+@{
+    ViewData["Title"] = "Create Post";
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Posts" asp-action="Index">Posts</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Create Post</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil-square me-2"></i>Create New Post
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form id="createPostForm">
+                        <div class="mb-4">
+                            <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="title" 
+                                   name="Title"
+                                   placeholder="Enter a descriptive title for your post"
+                                   maxlength="200"
+                                   required>
+                            <div class="form-text">Choose a clear, descriptive title (max 200 characters)</div>
+                            <div class="invalid-feedback">Please provide a title for your post.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="content" class="form-label">Content <span class="text-danger">*</span></label>
+                            <textarea class="form-control" 
+                                      id="content" 
+                                      name="Content"
+                                      rows="10" 
+                                      placeholder="Share your thoughts, questions, or ideas with the community..."
+                                      minlength="10"
+                                      required></textarea>
+                            <div class="form-text">Write at least 10 characters</div>
+                            <div class="invalid-feedback">Please provide content for your post (minimum 10 characters).</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Cancel
+                            </a>
+                            <div>
+                                <button type="button" class="btn btn-outline-primary me-2" id="previewBtn">
+                                    <i class="bi bi-eye me-2"></i>Preview
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <i class="bi bi-send me-2"></i>Publish Post
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Preview Modal -->
+            <div class="modal fade" id="previewModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Post Preview</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h3 id="previewTitle" class="mb-3"></h3>
+                            <div id="previewContent" class="post-content"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" id="publishFromPreview">Publish Post</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tips Sidebar -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Posting Tips</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Be Descriptive</strong>
+                            <p class="text-muted small mb-0">Use a clear title that summarizes your post</p>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Be Respectful</strong>
+                            <p class="text-muted small mb-0">Keep discussions civil and constructive</p>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Stay On Topic</strong>
+                            <p class="text-muted small mb-0">Focus on topics relevant to the community</p>
+                        </li>
+                        <li>
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Proofread</strong>
+                            <p class="text-muted small mb-0">Check for typos before publishing</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Check authentication
+            if (!isAuthenticated()) {
+                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+
+            const previewModal = new bootstrap.Modal('#previewModal');
+
+            // Preview button
+            $('#previewBtn').click(function() {
+                const title = $('#title').val().trim();
+                const content = $('#content').val().trim();
+                
+                if (!title || !content) {
+                    showToast('Please fill in both title and content to preview', 'warning');
+                    return;
+                }
+
+                $('#previewTitle').text(title);
+                $('#previewContent').html(content.replace(/\n/g, '<br>'));
+                previewModal.show();
+            });
+
+            // Publish from preview
+            $('#publishFromPreview').click(function() {
+                previewModal.hide();
+                submitPost();
+            });
+
+            // Form submission
+            $('#createPostForm').submit(function(e) {
+                e.preventDefault();
+                submitPost();
+            });
+
+            function submitPost() {
+                const title = $('#title').val().trim();
+                const content = $('#content').val().trim();
+
+                if (!title || title.length < 1) {
+                    showToast('Please provide a title', 'warning');
+                    $('#title').focus();
+                    return;
+                }
+
+                if (!content || content.length < 10) {
+                    showToast('Content must be at least 10 characters', 'warning');
+                    $('#content').focus();
+                    return;
+                }
+
+                $('#submitBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Publishing...');
+
+                apiRequest('/api/posts', 'POST', {
+                    title: title,
+                    content: content
+                }).then(function(result) {
+                    if (result.isSuccess && result.data) {
+                        showToast('Post published successfully!', 'success');
+                        window.location.href = '/Posts/Details/' + result.data.id;
+                    } else {
+                        showToast(result.errors?.join(', ') || 'Failed to create post', 'danger');
+                        $('#submitBtn').prop('disabled', false).html('<i class="bi bi-send me-2"></i>Publish Post');
+                    }
+                }).catch(function(err) {
+                    showToast('Failed to create post. Please try again.', 'danger');
+                    $('#submitBtn').prop('disabled', false).html('<i class="bi bi-send me-2"></i>Publish Post');
+                });
+            }
+
+            // Character counter for title
+            $('#title').on('input', function() {
+                const remaining = 200 - $(this).val().length;
+                $(this).siblings('.form-text').text(`${remaining} characters remaining`);
+            });
+        });
+    </script>
+}

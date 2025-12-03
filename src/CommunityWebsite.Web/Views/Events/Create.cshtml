@@ -1,0 +1,185 @@
+@model CreateEventRequest
+@{
+    ViewData["Title"] = "Create Event";
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Events" asp-action="Index">Events</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Create Event</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-calendar-plus me-2"></i>Create New Event
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form id="createEventForm">
+                        <div class="mb-4">
+                            <label for="title" class="form-label">Event Title <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="title" 
+                                   name="Title"
+                                   placeholder="Enter a title for your event"
+                                   maxlength="200"
+                                   required>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="date" 
+                                       name="Date"
+                                       required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="time" class="form-label">Time <span class="text-danger">*</span></label>
+                                <input type="time" 
+                                       class="form-control" 
+                                       id="time" 
+                                       name="Time"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="location" class="form-label">Location</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="location" 
+                                   name="Location"
+                                   placeholder="Where will this event take place?">
+                            <div class="form-text">Physical address, online meeting link, or "TBD"</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="Description"
+                                      rows="6" 
+                                      placeholder="Describe your event - what will happen, what should attendees expect, what to bring, etc."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="bi bi-calendar-plus me-2"></i>Create Event
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tips Sidebar -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Event Tips</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Choose a Clear Title</strong>
+                            <p class="text-muted small mb-0">Make it easy for members to understand what the event is about</p>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Set the Right Time</strong>
+                            <p class="text-muted small mb-0">Consider your community's time zones</p>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Be Specific About Location</strong>
+                            <p class="text-muted small mb-0">Include full address or meeting link</p>
+                        </li>
+                        <li>
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Add Helpful Details</strong>
+                            <p class="text-muted small mb-0">Include agenda, what to bring, parking info, etc.</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Check authentication
+            if (!isAuthenticated()) {
+                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            $('#date').attr('min', today);
+
+            // Form submission
+            $('#createEventForm').submit(function(e) {
+                e.preventDefault();
+                
+                const title = $('#title').val().trim();
+                const date = $('#date').val();
+                const time = $('#time').val();
+                const location = $('#location').val().trim();
+                const description = $('#description').val().trim();
+
+                if (!title) {
+                    showToast('Please provide an event title', 'warning');
+                    $('#title').focus();
+                    return;
+                }
+
+                if (!date || !time) {
+                    showToast('Please provide both date and time', 'warning');
+                    return;
+                }
+
+                const eventDateTime = new Date(`${date}T${time}`);
+                if (eventDateTime <= new Date()) {
+                    showToast('Event date must be in the future', 'warning');
+                    return;
+                }
+
+                $('#submitBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Creating...');
+
+                apiRequest('/api/events', 'POST', {
+                    title: title,
+                    date: eventDateTime.toISOString(),
+                    location: location || null,
+                    description: description || null
+                }).then(function(result) {
+                    if (result.isSuccess && result.data) {
+                        showToast('Event created successfully!', 'success');
+                        window.location.href = '/Events/Details/' + result.data.id;
+                    } else {
+                        showToast(result.errors?.join(', ') || 'Failed to create event', 'danger');
+                        $('#submitBtn').prop('disabled', false).html('<i class="bi bi-calendar-plus me-2"></i>Create Event');
+                    }
+                }).catch(function() {
+                    showToast('Failed to create event. Please try again.', 'danger');
+                    $('#submitBtn').prop('disabled', false).html('<i class="bi bi-calendar-plus me-2"></i>Create Event');
+                });
+            });
+        });
+    </script>
+}

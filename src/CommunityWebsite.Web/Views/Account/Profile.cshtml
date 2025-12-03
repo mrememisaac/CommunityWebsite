@@ -1,0 +1,436 @@
+@model UserDto
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">My Profile</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Profile Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center py-4">
+                    <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 100px; height: 100px; font-size: 2.5rem;" id="userAvatar">
+                        ?
+                    </div>
+                    <h4 id="displayUsername" class="mb-1">Loading...</h4>
+                    <p class="text-muted mb-3" id="displayEmail">Loading...</p>
+                    <div id="userRoles" class="mb-3">
+                        <!-- Roles will be populated by JavaScript -->
+                    </div>
+                    <p class="small text-muted mb-0">
+                        <i class="bi bi-calendar me-1"></i>
+                        Member since <span id="memberSince">-</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Statistics Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>My Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="display-6" id="statPosts">0</div>
+                            <small class="text-muted">Posts</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="display-6" id="statComments">0</div>
+                            <small class="text-muted">Comments</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="display-6" id="statEvents">0</div>
+                            <small class="text-muted">Events</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                            <i class="bi bi-pencil me-2"></i>Edit Profile
+                        </button>
+                        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                            <i class="bi bi-key me-2"></i>Change Password
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="logout()">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Section -->
+        <div class="col-lg-8">
+            <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts" type="button" role="tab">
+                        <i class="bi bi-file-earmark-text me-1"></i>My Posts
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab">
+                        <i class="bi bi-chat-dots me-1"></i>My Comments
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="events-tab" data-bs-toggle="tab" data-bs-target="#events" type="button" role="tab">
+                        <i class="bi bi-calendar-event me-1"></i>My Events
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="profileTabsContent">
+                <!-- Posts Tab -->
+                <div class="tab-pane fade show active" id="posts" role="tabpanel">
+                    <div id="myPostsList">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comments Tab -->
+                <div class="tab-pane fade" id="comments" role="tabpanel">
+                    <div id="myCommentsList">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Events Tab -->
+                <div class="tab-pane fade" id="events" role="tabpanel">
+                    <div id="myEventsList">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editProfileForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editUsername" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="editUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="editEmail" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="changePasswordForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="newPassword" minlength="8" required>
+                        <div class="form-text">At least 8 characters</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirmNewPassword" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Change Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let userId;
+
+        $(document).ready(function() {
+            // Check authentication
+            if (!isAuthenticated()) {
+                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+
+            userId = localStorage.getItem('userId');
+            loadProfile();
+            loadMyPosts();
+
+            // Tab change handler
+            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+                const target = $(e.target).attr('data-bs-target');
+                if (target === '#posts') loadMyPosts();
+                else if (target === '#comments') loadMyComments();
+                else if (target === '#events') loadMyEvents();
+            });
+
+            // Edit profile form
+            $('#editProfileForm').submit(function(e) {
+                e.preventDefault();
+                const username = $('#editUsername').val().trim();
+                const email = $('#editEmail').val().trim();
+
+                apiRequest(`/api/users/${userId}`, 'PUT', {
+                    username: username,
+                    email: email
+                }).then(function(result) {
+                    if (result.isSuccess) {
+                        localStorage.setItem('username', username);
+                        localStorage.setItem('email', email);
+                        showToast('Profile updated successfully!', 'success');
+                        bootstrap.Modal.getInstance('#editProfileModal').hide();
+                        loadProfile();
+                    } else {
+                        showToast(result.errors?.join(', ') || 'Failed to update profile', 'danger');
+                    }
+                });
+            });
+
+            // Change password form
+            $('#changePasswordForm').submit(function(e) {
+                e.preventDefault();
+                const newPassword = $('#newPassword').val();
+                const confirmPassword = $('#confirmNewPassword').val();
+
+                if (newPassword !== confirmPassword) {
+                    showToast('Passwords do not match', 'warning');
+                    return;
+                }
+
+                apiRequest(`/api/users/${userId}/change-password`, 'POST', {
+                    currentPassword: $('#currentPassword').val(),
+                    newPassword: newPassword
+                }).then(function(result) {
+                    if (result.isSuccess) {
+                        showToast('Password changed successfully!', 'success');
+                        bootstrap.Modal.getInstance('#changePasswordModal').hide();
+                        $('#changePasswordForm')[0].reset();
+                    } else {
+                        showToast(result.errors?.join(', ') || 'Failed to change password', 'danger');
+                    }
+                });
+            });
+        });
+
+        function loadProfile() {
+            const username = localStorage.getItem('username') || 'User';
+            const email = localStorage.getItem('email') || '';
+            const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+
+            $('#userAvatar').text(username.charAt(0).toUpperCase());
+            $('#displayUsername').text(username);
+            $('#displayEmail').text(email);
+            $('#editUsername').val(username);
+            $('#editEmail').val(email);
+
+            // Display roles
+            let rolesHtml = '';
+            roles.forEach(role => {
+                const badgeClass = role === 'Admin' ? 'bg-danger' : role === 'Moderator' ? 'bg-warning' : 'bg-info';
+                rolesHtml += `<span class="badge ${badgeClass} me-1">${role}</span>`;
+            });
+            $('#userRoles').html(rolesHtml || '<span class="badge bg-secondary">Member</span>');
+
+            // Get user details from API
+            apiRequest(`/api/users/${userId}`).then(function(result) {
+                if (result.isSuccess && result.data) {
+                    const user = result.data;
+                    $('#memberSince').text(formatDate(user.createdAt));
+                    $('#statPosts').text(user.postCount || 0);
+                    $('#statComments').text(user.commentCount || 0);
+                    $('#statEvents').text(user.eventCount || 0);
+                }
+            });
+        }
+
+        function loadMyPosts() {
+            apiRequest(`/api/posts?authorId=${userId}`).then(function(result) {
+                if (result.isSuccess && result.data) {
+                    const posts = result.data;
+                    if (posts.length === 0) {
+                        $('#myPostsList').html('<div class="text-center text-muted py-4"><i class="bi bi-file-earmark-text display-4"></i><p class="mt-2">You haven\'t created any posts yet.</p><a href="/Posts/Create" class="btn btn-primary mt-2">Create First Post</a></div>');
+                        return;
+                    }
+
+                    let html = '';
+                    posts.forEach(post => {
+                        html += `
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h5 class="card-title"><a href="/Posts/Details/${post.id}" class="text-decoration-none">${post.title}</a></h5>
+                                        <small class="text-muted">${formatDate(post.createdAt)}</small>
+                                    </div>
+                                    <p class="card-text text-muted">${post.content.substring(0, 100)}...</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-secondary">${post.commentCount} comments</span>
+                                        <div>
+                                            <a href="/Posts/Edit/${post.id}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deletePost(${post.id})">Delete</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+                    $('#myPostsList').html(html);
+                }
+            });
+        }
+
+        function loadMyComments() {
+            apiRequest(`/api/comments?authorId=${userId}`).then(function(result) {
+                if (result.isSuccess && result.data) {
+                    const comments = result.data;
+                    if (comments.length === 0) {
+                        $('#myCommentsList').html('<div class="text-center text-muted py-4"><i class="bi bi-chat-dots display-4"></i><p class="mt-2">You haven\'t made any comments yet.</p></div>');
+                        return;
+                    }
+
+                    let html = '';
+                    comments.forEach(comment => {
+                        html += `
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <p class="card-text">${comment.content}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">on <a href="/Posts/Details/${comment.postId}">Post #${comment.postId}</a> - ${formatDate(comment.createdAt)}</small>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteComment(${comment.id})">Delete</button>
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+                    $('#myCommentsList').html(html);
+                }
+            });
+        }
+
+        function loadMyEvents() {
+            apiRequest(`/api/events?organizerId=${userId}`).then(function(result) {
+                if (result.isSuccess && result.data) {
+                    const events = result.data;
+                    if (events.length === 0) {
+                        $('#myEventsList').html('<div class="text-center text-muted py-4"><i class="bi bi-calendar-event display-4"></i><p class="mt-2">You haven\'t organized any events yet.</p><a href="/Events/Create" class="btn btn-primary mt-2">Create First Event</a></div>');
+                        return;
+                    }
+
+                    let html = '';
+                    events.forEach(evt => {
+                        const isPast = new Date(evt.date) < new Date();
+                        html += `
+                            <div class="card mb-3 ${isPast ? 'opacity-75' : ''}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h5 class="card-title"><a href="/Events/Details/${evt.id}" class="text-decoration-none">${evt.title}</a></h5>
+                                        <span class="badge ${isPast ? 'bg-secondary' : 'bg-success'}">${isPast ? 'Past' : 'Upcoming'}</span>
+                                    </div>
+                                    <p class="card-text text-muted"><i class="bi bi-calendar me-1"></i>${formatDate(evt.date)} <i class="bi bi-geo-alt ms-2 me-1"></i>${evt.location || 'TBD'}</p>
+                                    <div class="text-end">
+                                        <a href="/Events/Edit/${evt.id}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteEvent(${evt.id})">Delete</button>
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+                    $('#myEventsList').html(html);
+                }
+            });
+        }
+
+        function deletePost(postId) {
+            if (!confirm('Are you sure you want to delete this post?')) return;
+            apiRequest(`/api/posts/${postId}`, 'DELETE').then(function(result) {
+                if (result.isSuccess) {
+                    showToast('Post deleted', 'success');
+                    loadMyPosts();
+                } else {
+                    showToast('Failed to delete post', 'danger');
+                }
+            });
+        }
+
+        function deleteComment(commentId) {
+            if (!confirm('Are you sure you want to delete this comment?')) return;
+            apiRequest(`/api/comments/${commentId}`, 'DELETE').then(function(result) {
+                if (result.isSuccess) {
+                    showToast('Comment deleted', 'success');
+                    loadMyComments();
+                } else {
+                    showToast('Failed to delete comment', 'danger');
+                }
+            });
+        }
+
+        function deleteEvent(eventId) {
+            if (!confirm('Are you sure you want to delete this event?')) return;
+            apiRequest(`/api/events/${eventId}`, 'DELETE').then(function(result) {
+                if (result.isSuccess) {
+                    showToast('Event deleted', 'success');
+                    loadMyEvents();
+                } else {
+                    showToast('Failed to delete event', 'danger');
+                }
+            });
+        }
+
+        function logout() {
+            removeAuthToken();
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            localStorage.removeItem('email');
+            localStorage.removeItem('roles');
+            showToast('Logged out successfully', 'success');
+            window.location.href = '/';
+        }
+    </script>
+}

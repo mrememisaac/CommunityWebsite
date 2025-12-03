@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Website - Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: white !important;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary-color) !important;
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .hero-section h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .hero-section p {
+            font-size: 1.25rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .post-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            background-color: white;
+        }
+
+        .post-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .post-card-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            background-color: #f8f9fa;
+        }
+
+        .post-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #212529;
+            text-decoration: none;
+            margin-bottom: 10px;
+        }
+
+        .post-title:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+
+        .post-meta {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .post-author {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .post-category {
+            display: inline-block;
+            background-color: #e7f1ff;
+            color: var(--primary-color);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .post-content {
+            padding: 20px;
+            color: #495057;
+            line-height: 1.6;
+        }
+
+        .post-preview {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: #6c757d;
+        }
+
+        .post-footer {
+            padding: 15px 20px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .post-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-icon {
+            color: var(--primary-color);
+        }
+
+        .search-section {
+            background-color: white;
+            padding: 30px 20px;
+            margin-bottom: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-input {
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+        }
+
+        .btn-primary-custom {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 10px 25px;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+
+        .btn-primary-custom:hover {
+            background-color: #0b5ed7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        }
+
+        .sidebar {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-title {
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #212529;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .sidebar-item {
+            padding: 10px 0;
+            color: #6c757d;
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-item:hover {
+            color: var(--primary-color);
+            padding-left: 10px;
+        }
+
+        .badge-custom {
+            background-color: #e7f1ff;
+            color: var(--primary-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .footer {
+            background-color: #212529;
+            color: white;
+            padding: 40px 20px;
+            margin-top: 60px;
+        }
+
+        .footer-link {
+            color: #adb5bd;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .hero-section h1 {
+                font-size: 1.75rem;
+            }
+
+            .hero-section p {
+                font-size: 1rem;
+            }
+
+            .post-card-header {
+                padding: 15px;
+            }
+
+            .post-footer {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .post-stats {
+                width: 100%;
+                justify-content: space-around;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-lg">
+            <a class="navbar-brand" href="#"><i class="bi bi-chat-dots"></i> Community</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#home">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#posts">Posts</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#events">Events</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary btn-sm ms-2" href="#login">Login</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section" id="home">
+        <div class="container-lg">
+            <h1>Welcome to Our Community</h1>
+            <p>Connect, share, and collaborate with like-minded individuals</p>
+            <button class="btn btn-light btn-lg me-2">Create Post</button>
+            <button class="btn btn-outline-light btn-lg">Explore</button>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container-lg my-5">
+        <div class="row g-4">
+            <!-- Posts Column -->
+            <div class="col-lg-8">
+                <!-- Search Section -->
+                <div class="search-section">
+                    <div class="input-group">
+                        <span class="input-group-text border-0 bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control search-input border-0" placeholder="Search posts..."
+                            id="searchInput">
+                        <button class="btn btn-primary-custom" type="button">Search</button>
+                    </div>
+                </div>
+
+                <!-- Filter Tabs -->
+                <ul class="nav nav-tabs mb-4" id="filterTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="filterPosts('all')">All Posts</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="filterPosts('trending')">Trending</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="filterPosts('recent')">Recent</a>
+                    </li>
+                </ul>
+
+                <!-- Posts List -->
+                <div id="postsList">
+                    <!-- Sample Post 1 -->
+                    <article class="post-card">
+                        <div class="post-card-header">
+                            <h2 class="post-title"><a href="#post1">Welcome to the Community!</a></h2>
+                            <div class="post-meta">
+                                By <span class="post-author">admin_user</span>
+                                <span class="badge-custom">Announcement</span>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            <p class="post-preview">
+                                This is a welcome post introducing our amazing community. Feel free to introduce
+                                yourself
+                                and connect with other members. We're excited to have you here and look forward to
+                                collaborating together.
+                            </p>
+                        </div>
+                        <div class="post-footer">
+                            <div class="post-stats">
+                                <div class="stat-item">
+                                    <i class="bi bi-eye stat-icon"></i>
+                                    <span>150 views</span>
+                                </div>
+                                <div class="stat-item">
+                                    <i class="bi bi-chat stat-icon"></i>
+                                    <span>12 comments</span>
+                                </div>
+                            </div>
+                            <a href="#post1" class="text-primary">Read More →</a>
+                        </div>
+                    </article>
+
+                    <!-- Sample Post 2 -->
+                    <article class="post-card">
+                        <div class="post-card-header">
+                            <h2 class="post-title"><a href="#post2">Tips for New Members</a></h2>
+                            <div class="post-meta">
+                                By <span class="post-author">john_doe</span>
+                                <span class="badge-custom">General</span>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            <p class="post-preview">
+                                Here are some helpful tips for getting started in our community. Learn how to navigate
+                                the forums, create meaningful connections, and make the most of your experience.
+                                These guidelines will help you become an active and valued member.
+                            </p>
+                        </div>
+                        <div class="post-footer">
+                            <div class="post-stats">
+                                <div class="stat-item">
+                                    <i class="bi bi-eye stat-icon"></i>
+                                    <span>75 views</span>
+                                </div>
+                                <div class="stat-item">
+                                    <i class="bi bi-chat stat-icon"></i>
+                                    <span>8 comments</span>
+                                </div>
+                            </div>
+                            <a href="#post2" class="text-primary">Read More →</a>
+                        </div>
+                    </article>
+
+                    <!-- Sample Post 3 -->
+                    <article class="post-card">
+                        <div class="post-card-header">
+                            <h2 class="post-title"><a href="#post3">Feature Request: Dark Mode</a></h2>
+                            <div class="post-meta">
+                                By <span class="post-author">jane_smith</span>
+                                <span class="badge-custom">Feature</span>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            <p class="post-preview">
+                                Several community members have requested a dark mode theme. This feature would improve
+                                readability and reduce eye strain during late-night browsing sessions. Would love to
+                                hear
+                                your thoughts on this feature request!
+                            </p>
+                        </div>
+                        <div class="post-footer">
+                            <div class="post-stats">
+                                <div class="stat-item">
+                                    <i class="bi bi-eye stat-icon"></i>
+                                    <span>45 views</span>
+                                </div>
+                                <div class="stat-item">
+                                    <i class="bi bi-chat stat-icon"></i>
+                                    <span>5 comments</span>
+                                </div>
+                            </div>
+                            <a href="#post3" class="text-primary">Read More →</a>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- Pagination -->
+                <nav aria-label="Page navigation" class="mt-5">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">Previous</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Featured Events Widget -->
+                <aside class="sidebar mb-4">
+                    <div class="sidebar-title">
+                        <i class="bi bi-calendar-event"></i> Upcoming Events
+                    </div>
+                    <div class="event-item mb-3">
+                        <h5 class="mb-1">Community Meetup</h5>
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-calendar"></i> Dec 15, 2024
+                        </p>
+                    </div>
+                    <div class="event-item mb-3">
+                        <h5 class="mb-1">Virtual Workshop</h5>
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-calendar"></i> Dec 20, 2024
+                        </p>
+                    </div>
+                    <a href="#events" class="sidebar-item">View all events →</a>
+                </aside>
+
+                <!-- Categories Widget -->
+                <aside class="sidebar mb-4">
+                    <div class="sidebar-title">
+                        <i class="bi bi-collection"></i> Categories
+                    </div>
+                    <a href="#" class="sidebar-item">General Discussion</a>
+                    <a href="#" class="sidebar-item">Announcements</a>
+                    <a href="#" class="sidebar-item">Feature Requests</a>
+                    <a href="#" class="sidebar-item">Bug Reports</a>
+                    <a href="#" class="sidebar-item">Showcase</a>
+                </aside>
+
+                <!-- Top Contributors Widget -->
+                <aside class="sidebar mb-4">
+                    <div class="sidebar-title">
+                        <i class="bi bi-people"></i> Top Contributors
+                    </div>
+                    <div class="contributor-item d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2"
+                            style="width: 40px; height: 40px; flex-shrink: 0;">
+                            <strong>JD</strong>
+                        </div>
+                        <div>
+                            <p class="mb-0"><strong>john_doe</strong></p>
+                            <p class="text-muted small mb-0">45 posts</p>
+                        </div>
+                    </div>
+                    <div class="contributor-item d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2"
+                            style="width: 40px; height: 40px; flex-shrink: 0;">
+                            <strong>JS</strong>
+                        </div>
+                        <div>
+                            <p class="mb-0"><strong>jane_smith</strong></p>
+                            <p class="text-muted small mb-0">38 posts</p>
+                        </div>
+                    </div>
+                    <div class="contributor-item d-flex align-items-center">
+                        <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center me-2"
+                            style="width: 40px; height: 40px; flex-shrink: 0;">
+                            <strong>MB</strong>
+                        </div>
+                        <div>
+                            <p class="mb-0"><strong>mike_brown</strong></p>
+                            <p class="text-muted small mb-0">32 posts</p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container-lg">
+            <div class="row">
+                <div class="col-md-3 mb-4">
+                    <h5 class="mb-3">About Us</h5>
+                    <p class="text-muted">A vibrant community of developers and enthusiasts collaborating and sharing
+                        knowledge.</p>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <h5 class="mb-3">Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="footer-link">Home</a></li>
+                        <li><a href="#" class="footer-link">Posts</a></li>
+                        <li><a href="#" class="footer-link">Events</a></li>
+                        <li><a href="#" class="footer-link">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <h5 class="mb-3">Community</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="footer-link">Guidelines</a></li>
+                        <li><a href="#" class="footer-link">Code of Conduct</a></li>
+                        <li><a href="#" class="footer-link">Privacy Policy</a></li>
+                        <li><a href="#" class="footer-link">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <h5 class="mb-3">Follow Us</h5>
+                    <div class="social-links">
+                        <a href="#" class="footer-link me-3"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="footer-link me-3"><i class="bi bi-twitter"></i></a>
+                        <a href="#" class="footer-link me-3"><i class="bi bi-linkedin"></i></a>
+                        <a href="#" class="footer-link"><i class="bi bi-github"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="bg-secondary">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="text-muted">&copy; 2024 Community Website. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted">Made with <i class="bi bi-heart-fill text-danger"></i> by our team</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function filterPosts(filter) {
+            console.log('Filtering posts by:', filter);
+            // Implementation for filtering logic
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const searchTerm = this.value;
+                console.log('Searching for:', searchTerm);
+                // API call implementation
+            }
+        });
+    </script>
+</body>
+
+</html>

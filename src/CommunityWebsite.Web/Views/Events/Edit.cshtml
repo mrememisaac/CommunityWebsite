@@ -1,0 +1,214 @@
+@model EventDto
+@{
+    ViewData["Title"] = "Edit Event";
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Events" asp-action="Index">Events</a></li>
+            <li class="breadcrumb-item"><a href="/Events/Details/@Model?.Id">@Model?.Title</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Edit</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil me-2"></i>Edit Event
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (Model != null)
+                    {
+                        <form id="editEventForm">
+                            <input type="hidden" id="eventId" value="@Model.Id">
+                            
+                            <div class="mb-4">
+                                <label for="title" class="form-label">Event Title <span class="text-danger">*</span></label>
+                                <input type="text" 
+                                       class="form-control form-control-lg" 
+                                       id="title" 
+                                       name="Title"
+                                       value="@Model.Title"
+                                       maxlength="200"
+                                       required>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="date" 
+                                           name="Date"
+                                           value="@Model.Date.ToString("yyyy-MM-dd")"
+                                           required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="time" class="form-label">Time <span class="text-danger">*</span></label>
+                                    <input type="time" 
+                                           class="form-control" 
+                                           id="time" 
+                                           name="Time"
+                                           value="@Model.Date.ToString("HH:mm")"
+                                           required>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="location" class="form-label">Location</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="location" 
+                                       name="Location"
+                                       value="@Model.Location"
+                                       placeholder="Where will this event take place?">
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" 
+                                          id="description" 
+                                          name="Description"
+                                          rows="6">@Model.Description</textarea>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="/Events/Details/@Model.Id" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Cancel
+                                </a>
+                                <div>
+                                    <button type="button" class="btn btn-outline-danger me-2" id="deleteBtn">
+                                        <i class="bi bi-trash me-2"></i>Delete Event
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                                        <i class="bi bi-check-lg me-2"></i>Save Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-exclamation-circle display-1 text-warning"></i>
+                            <h3 class="mt-3">Event Not Found</h3>
+                            <p class="text-muted">The event you're trying to edit doesn't exist.</p>
+                            <a href="/Events" class="btn btn-primary">Back to Events</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this event?</p>
+                <p class="text-muted mb-0"><strong>This action cannot be undone.</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">
+                    <i class="bi bi-trash me-2"></i>Delete Event
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            const eventId = $('#eventId').val();
+            const deleteModal = new bootstrap.Modal('#deleteModal');
+
+            // Check authentication
+            if (!isAuthenticated()) {
+                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+
+            // Form submission
+            $('#editEventForm').submit(function(e) {
+                e.preventDefault();
+                
+                const title = $('#title').val().trim();
+                const date = $('#date').val();
+                const time = $('#time').val();
+                const location = $('#location').val().trim();
+                const description = $('#description').val().trim();
+
+                if (!title) {
+                    showToast('Please provide an event title', 'warning');
+                    $('#title').focus();
+                    return;
+                }
+
+                if (!date || !time) {
+                    showToast('Please provide both date and time', 'warning');
+                    return;
+                }
+
+                const eventDateTime = new Date(`${date}T${time}`);
+
+                $('#submitBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
+
+                apiRequest(`/api/events/${eventId}`, 'PUT', {
+                    title: title,
+                    date: eventDateTime.toISOString(),
+                    location: location || null,
+                    description: description || null
+                }).then(function(result) {
+                    if (result.isSuccess) {
+                        showToast('Event updated successfully!', 'success');
+                        window.location.href = '/Events/Details/' + eventId;
+                    } else {
+                        showToast(result.errors?.join(', ') || 'Failed to update event', 'danger');
+                        $('#submitBtn').prop('disabled', false).html('<i class="bi bi-check-lg me-2"></i>Save Changes');
+                    }
+                }).catch(function() {
+                    showToast('Failed to update event. Please try again.', 'danger');
+                    $('#submitBtn').prop('disabled', false).html('<i class="bi bi-check-lg me-2"></i>Save Changes');
+                });
+            });
+
+            // Delete button
+            $('#deleteBtn').click(function() {
+                deleteModal.show();
+            });
+
+            // Confirm delete
+            $('#confirmDelete').click(function() {
+                $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Deleting...');
+
+                apiRequest(`/api/events/${eventId}`, 'DELETE')
+                    .then(function(result) {
+                        if (result.isSuccess) {
+                            showToast('Event deleted successfully', 'success');
+                            window.location.href = '/Events';
+                        } else {
+                            showToast(result.errors?.join(', ') || 'Failed to delete event', 'danger');
+                            deleteModal.hide();
+                            $('#confirmDelete').prop('disabled', false).html('<i class="bi bi-trash me-2"></i>Delete Event');
+                        }
+                    });
+            });
+        });
+    </script>
+}
