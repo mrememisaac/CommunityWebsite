@@ -79,4 +79,41 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             .AsNoTracking()
             .ToListAsync();
     }
+
+    /// <summary>
+    /// Gets users with pagination and optional search.
+    /// Includes post and comment counts via efficient SQL queries.
+    /// </summary>
+    public async Task<(IEnumerable<User> Users, int TotalCount)> GetUsersWithStatsAsync(
+        int pageNumber,
+        int pageSize,
+        string? searchTerm = null)
+    {
+        var query = _dbSet.AsQueryable();
+
+        // Apply search filter at database level
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lowerSearch = searchTerm.ToLower();
+            query = query.Where(u =>
+                EF.Functions.Like(u.Username.ToLower(), $"%{lowerSearch}%") ||
+                EF.Functions.Like(u.Email.ToLower(), $"%{lowerSearch}%"));
+        }
+
+        // Get total count before pagination
+        var totalCount = await query.CountAsync();
+
+        // Apply pagination with includes
+        var skip = (pageNumber - 1) * pageSize;
+        var users = await query
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip(skip)
+            .Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return (users, totalCount);
+    }
 }
