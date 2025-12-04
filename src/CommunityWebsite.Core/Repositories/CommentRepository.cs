@@ -17,10 +17,11 @@ public class CommentRepository : GenericRepository<Comment>, ICommentRepository
     public async Task<IEnumerable<Comment>> GetPostCommentsAsync(int postId)
     {
         return await _dbSet
-            .Where(c => c.PostId == postId && !c.IsDeleted)
+            .Where(c => c.PostId == postId && !c.IsDeleted && c.ParentCommentId == null)
             .OrderByDescending(c => c.CreatedAt)
             .Include(c => c.Author)
-            .Include(c => c.Replies)
+            .Include(c => c.Replies.Where(r => !r.IsDeleted))
+            .ThenInclude(r => r.Author)
             .AsNoTracking()
             .ToListAsync();
     }
