@@ -47,10 +47,10 @@ RESTful endpoints for programmatic access (mobile apps, SPAs, third-party integr
 | Controller           | Route           | Purpose                                   |
 | -------------------- | --------------- | ----------------------------------------- |
 | `AuthController`     | `/api/auth`     | Authentication (login, register, refresh) |
-| `PostsController`    | `/api/posts`    | CRUD operations for posts                 |
+| `PostsController`    | `/api/posts`    | CRUD operations for posts, user posts     |
 | `CommentsController` | `/api/comments` | Comment management                        |
 | `EventsController`   | `/api/events`   | Event management                          |
-| `UsersController`    | `/api/users`    | User profiles                             |
+| `UsersController`    | `/api/users`    | User profiles, user lookup                |
 | `RolesController`    | `/api/roles`    | Role management (admin)                   |
 
 **Characteristics:**
@@ -65,12 +65,13 @@ RESTful endpoints for programmatic access (mobile apps, SPAs, third-party integr
 
 Server-rendered HTML pages with Razor views:
 
-| Controller             | Route        | Purpose                        |
-| ---------------------- | ------------ | ------------------------------ |
-| `HomeController`       | `/`, `/Home` | Landing page, about, contact   |
-| `PostsViewController`  | `/Posts`     | Browse and view posts          |
-| `EventsViewController` | `/Events`    | Browse and view events         |
-| `AccountController`    | `/Account`   | Login, register, profile pages |
+| Controller             | Route         | Purpose                           |
+| ---------------------- | ------------- | --------------------------------- |
+| `HomeController`       | `/`, `/Home`  | Landing page, about, contact      |
+| `PostsViewController`  | `/Posts`      | Browse, view posts, user's posts  |
+| `EventsViewController` | `/Events`     | Browse and view events            |
+| `AccountController`    | `/Account`    | Login, register, profile pages    |
+| `UsersViewController`  | `/users/{id}` | Public user profiles with history |
 
 **Characteristics:**
 
