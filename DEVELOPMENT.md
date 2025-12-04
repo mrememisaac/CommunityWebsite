@@ -6,11 +6,12 @@ This guide provides detailed information for understanding and extending the Com
 
 1. [Architecture Overview](#architecture-overview)
 2. [Code Organization](#code-organization)
-3. [LINQ Query Examples](#linq-query-examples)
-4. [Entity Framework Patterns](#entity-framework-patterns)
-5. [Testing Strategy](#testing-strategy)
-6. [Performance Optimization](#performance-optimization)
-7. [Extending the Project](#extending-the-project)
+3. [User Profile Feature](#user-profile-feature)
+4. [LINQ Query Examples](#linq-query-examples)
+5. [Entity Framework Patterns](#entity-framework-patterns)
+6. [Testing Strategy](#testing-strategy)
+7. [Performance Optimization](#performance-optimization)
+8. [Extending the Project](#extending-the-project)
 
 ## 🏛️ Architecture Overview
 
@@ -123,6 +124,209 @@ CommunityWebsite.Web/
     - Connection strings
     - Logging settings
 ```
+
+## 👤 User Profile Feature
+
+### Overview
+
+The user profile feature enables users to view public profiles of other community members, discover their content, and navigate between related users. This demonstrates:
+
+- **API + MVC Integration**: RESTful API endpoint consumed by server-rendered views
+- **Proper Authorization**: Public access to profiles, edit permissions only for own profile
+- **Navigation Linking**: Profile links throughout the app (posts, events, comments)
+- **Content Discovery**: Recent posts and user statistics on profile pages
+
+### Architecture
+
+#### API Layer (`UsersController.cs`)
+
+**Endpoint**: `GET /api/users/{id}`
+
+```csharp
+// Returns UserProfileDto with user info, roles, and post count
+public async Task<ActionResult<UserProfileDto>> GetUser(int id)
+{
+    var user = await _userRepository.GetUserWithRolesAsync(id);
+    if (user == null)
+        return NotFound();
+
+    var posts = await _postRepository.GetUserPostsAsync(id);
+
+    return Ok(new UserProfileDto
+    {
+        Id = user.Id,
+        Username = user.Username,
+        Email = user.Email,
+        Bio = user.Bio,
+        ProfileImageUrl = user.ProfileImageUrl,
+        CreatedAt = user.CreatedAt,
+        PostCount = posts.Count(),
+        Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
+    });
+}
+```
+
+#### View Controller (`UsersViewController.cs`)
+
+**Route**: `/users/{id}`
+
+- Calls `/api/users/{id}` via repository methods
+- Retrieves recent posts (limited to 5)
+- Passes data to Razor view via ViewBag
+- Determines if viewing own profile for edit permissions
+
+#### Service Layer Integration
+
+**Methods Used**:
+
+- `IUserRepository.GetUserWithRolesAsync(id)` - Loads user with roles
+- `IPostRepository.GetUserPostsAsync(id)` - Gets user's posts (non-deleted)
+
+### Data Flow
+
+```
+Browser Request
+    ↓
+UsersViewController.Profile(id)
+    ↓
+Calls UserRepository.GetUserWithRolesAsync(id)
+    ↓
+Calls PostRepository.GetUserPostsAsync(id)
+    ↓
+Creates ViewBag with UserProfileDto
+    ↓
+Renders Views/Users/Profile.cshtml
+    ↓
+Displays user info, roles, recent posts
+```
+
+### Views & Components
+
+#### Profile View (`Views/Users/Profile.cshtml`)
+
+**Features**:
+
+- Avatar with initials fallback
+- User stats: posts, roles, join date
+- Role badges
+- Recent posts list with links
+- "Edit Profile" button for own profile only
+- Bio display with markdown support (ready)
+
+**Key UI Elements**:
+
+```html
+<!-- Profile Header -->
+<div class="card border-0 shadow-sm">
+    <div class="d-flex align-items-center gap-4">
+        <img src="@userProfile.ProfileImageUrl" class="rounded-circle" />
+        <div>
+            <h1 class="h2">@userProfile.Username</h1>
+            <p class="text-muted">Member since @userProfile.CreatedAt:MMMM dd, yyyy</p>
+            @if (!string.IsNullOrEmpty(userProfile.Bio))
+            {
+                <p>@userProfile.Bio</p>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Recent Posts -->
+<div class="list-group">
+    @foreach (var post in recentPosts)
+    {
+        <a href="@Url.Action("Details", "Posts", new { id = post.Id })"
+           class="list-group-item list-group-item-action">
+            <h5>@post.Title</h5>
+            <p class="text-muted small">@post.Preview</p>
+        </a>
+    }
+</div>
+```
+
+#### Profile Links Throughout App
+
+**Author Names → Profile**
+
+- Posts/Index.cshtml: Author avatars and names link to profile
+- Posts/Details.cshtml: Post author and comment authors link to profile
+- Events/Index.cshtml: Event organizer names link to profile
+- Events/Details.cshtml: Event organizer displays as profile link
+
+**Implementation Pattern**:
+
+```html
+<a href="@Url.Action("Profile", "Users", new { id = post.AuthorId })"
+   class="text-decoration-none">
+    <div class="avatar rounded-circle">@post.AuthorUsername[0]</div>
+</a>
+<a href="@Url.Action("Profile", "Users", new { id = post.AuthorId })"
+   class="text-decoration-none text-dark">
+    <strong>@post.AuthorUsername</strong>
+</a>
+```
+
+### MyPosts Feature
+
+**Route**: `/Posts/MyPosts`
+
+Logged-in users view only their own posts with enhanced filtering:
+
+- Search by title/content
+- Sort: Newest, Oldest, Most Comments, Most Views
+- Date range filtering (optional)
+- Edit/Delete actions on each post
+
+**API Endpoint**: `GET /api/posts/user/{userId}`
+
+Returns `IEnumerable<PostSummaryDto>` for current user's posts only.
+
+### Security Considerations
+
+✅ **Authorization**:
+
+- Profiles are public (no auth required to view)
+- Edit button only shows for own profile
+- Delete operations require authentication
+
+✅ **Data Filtering**:
+
+- Deleted posts excluded from profile
+- Only shows published content
+- Respects soft-delete logic
+
+✅ **Privacy**:
+
+- Email displayed on profile (consider hiding)
+- Customizable bio field
+- Profile image optional
+
+### Extension Points
+
+#### Future Enhancements
+
+1. **Profile Customization**
+
+   - Custom profile images/banners
+   - Markdown bio support
+   - Social media links
+
+2. **User Discovery**
+
+   - User search/filtering
+   - Members listing page
+   - Sort by join date, activity level
+
+3. **Social Features**
+
+   - Follow/unfollow users
+   - Direct messaging
+   - User activity feed
+
+4. **Analytics**
+   - Profile view count
+   - Most active users leaderboard
+   - User contribution metrics
 
 ## 🔍 LINQ Query Examples
 
