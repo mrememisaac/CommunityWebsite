@@ -84,7 +84,8 @@
                                 {
                                     <span class="badge bg-primary me-2 mb-2">
                                         @role.Name
-                                        <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.7rem;" onclick="removeRole(@Model.Id, '@role.Name')"></button>
+                                        <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.7rem;"
+                                            onclick="removeRole(@Model.Id, '@role.Name')"></button>
                                     </span>
                                 }
                             }
@@ -100,7 +101,8 @@
                         <div class="input-group">
                             <select id="roleSelect" class="form-select">
                                 <option value="">Select a role...</option>
-                                @foreach (var role in (ViewBag.AvailableRoles as IEnumerable<RoleDto>) ?? new List<RoleDto>())
+                                @foreach (var role in (ViewBag.AvailableRoles as IEnumerable<RoleDto>) ?? new
+                                                                List<RoleDto>())
                                 {
                                     @if (!Model.Roles.Any(r => r.Id == role.Id))
                                     {
@@ -108,7 +110,8 @@
                                     }
                                 }
                             </select>
-                            <button type="button" class="btn btn-success" onclick="assignRole(@Model.Id)">Assign</button>
+                            <button type="button" class="btn btn-success"
+                                onclick="assignRole(@Model.Id)">Assign</button>
                         </div>
                     </div>
                 </div>
@@ -122,13 +125,15 @@
                 <div class="card-body">
                     @if (Model.IsActive)
                     {
-                        <button type="button" class="btn btn-warning" onclick="deactivateUser(@Model.Id, '@Model.Username')">
+                        <button type="button" class="btn btn-warning"
+                            onclick="deactivateUser(@Model.Id, '@Model.Username')">
                             Deactivate Account
                         </button>
                     }
                     else
                     {
-                        <button type="button" class="btn btn-success" onclick="reactivateUser(@Model.Id, '@Model.Username')">
+                        <button type="button" class="btn btn-success"
+                            onclick="reactivateUser(@Model.Id, '@Model.Username')">
                             Reactivate Account
                         </button>
                     }
