@@ -87,8 +87,10 @@
 
 #### Controllers
 
-- `Controllers/PostsController.cs` - 7 post endpoints
+- `Controllers/PostsController.cs` - 7 post endpoints + 1 user posts endpoint
+- `Controllers/PostsViewController.cs` - 2 view actions (Index, MyPosts)
 - `Controllers/UsersController.cs` - 4 user endpoints
+- `Controllers/UsersViewController.cs` - 1 view action (Profile)
 - `Controllers/AuthController.cs` - 3 authentication endpoints
 
 #### Configuration
@@ -99,6 +101,21 @@
 
 #### Frontend
 
+- `Views/Home/Index.cshtml` - Landing page
+- `Views/Posts/Index.cshtml` - Posts listing with search/filter + profile links
+- `Views/Posts/Create.cshtml` - Create post form
+- `Views/Posts/Edit.cshtml` - Edit post form
+- `Views/Posts/Details.cshtml` - Post detail with comments + profile links
+- `Views/Posts/MyPosts.cshtml` - User's own posts with search & sort
+- `Views/Events/Index.cshtml` - Events listing with organizer profile links
+- `Views/Events/Create.cshtml` - Create event form
+- `Views/Events/Edit.cshtml` - Edit event form
+- `Views/Events/Details.cshtml` - Event detail with organizer profile link
+- `Views/Account/Login.cshtml` - Login form
+- `Views/Account/Register.cshtml` - Registration form
+- `Views/Account/Profile.cshtml` - User's own profile
+- `Views/Users/Profile.cshtml` - Public user profiles with post history
+- `Views/Shared/_Layout.cshtml` - Master layout with navigation
 - `wwwroot/index.html` - Bootstrap 5 responsive UI
 
 ### Unit Tests (`tests/CommunityWebsite.Tests/`)
