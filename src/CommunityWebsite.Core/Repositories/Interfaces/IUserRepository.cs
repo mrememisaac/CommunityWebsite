@@ -13,4 +13,5 @@ public interface IUserRepository : IRepository<User>
     Task<IEnumerable<User>> GetUsersByRoleAsync(string roleName);
     Task<bool> UserExistsAsync(string email);
     Task<IEnumerable<User>> GetActiveUsersAsync(int pageNumber = 1, int pageSize = 20);
+    Task<IEnumerable<User>> GetAllUsersAsync();
 }

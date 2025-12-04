@@ -69,4 +69,14 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             .AsNoTracking()
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<User>> GetAllUsersAsync()
+    {
+        return await _dbSet
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .OrderByDescending(u => u.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync();
+    }
 }
