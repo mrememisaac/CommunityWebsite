@@ -12,14 +12,15 @@
 
 ### HTTP Methods
 
-| Method | Purpose                  | Example               | Success Code   |
-| ------ | ------------------------ | --------------------- | -------------- |
-| GET    | Retrieve resources       | `GET /api/posts`      | 200 OK         |
-| GET    | Retrieve single resource | `GET /api/posts/1`    | 200 OK         |
-| POST   | Create new resource      | `POST /api/posts`     | 201 Created    |
-| PUT    | Update entire resource   | `PUT /api/posts/1`    | 200 OK         |
-| PATCH  | Partial update           | `PATCH /api/posts/1`  | 200 OK         |
-| DELETE | Remove resource          | `DELETE /api/posts/1` | 204 No Content |
+| Method | Purpose                  | Example                    | Success Code   |
+| ------ | ------------------------ | -------------------------- | -------------- |
+| GET    | Retrieve resources       | `GET /api/posts`           | 200 OK         |
+| GET    | Retrieve single resource | `GET /api/posts/1`         | 200 OK         |
+| GET    | Get user's posts         | `GET /api/posts/user/{id}` | 200 OK         |
+| POST   | Create new resource      | `POST /api/posts`          | 201 Created    |
+| PUT    | Update entire resource   | `PUT /api/posts/1`         | 200 OK         |
+| PATCH  | Partial update           | `PATCH /api/posts/1`       | 200 OK         |
+| DELETE | Remove resource          | `DELETE /api/posts/1`      | 204 No Content |
 
 ### Response Formats
 
