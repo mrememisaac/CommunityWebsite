@@ -145,7 +145,7 @@ public class CommentServiceTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().NotBeNull();
-        result.Data.Should().HaveCount(2); // Only top-level comments
+        result.Data.Should().HaveCount(3); // 2 top-level comments + 1 reply
         result.ErrorMessage.Should().BeNull();
     }
 
