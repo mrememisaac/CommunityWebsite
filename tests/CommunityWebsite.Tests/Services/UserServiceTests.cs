@@ -8,6 +8,7 @@ using CommunityWebsite.Core.Models;
 using CommunityWebsite.Core.Repositories.Interfaces;
 using CommunityWebsite.Core.Services;
 using CommunityWebsite.Core.Services.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace CommunityWebsite.Tests.Services;
@@ -19,6 +20,7 @@ public class UserServiceTests
 {
     private readonly Mock<IUserRepository> _mockUserRepository;
     private readonly Mock<IPostRepository> _mockPostRepository;
+    private readonly Mock<IMemoryCache> _mockMemoryCache;
     private readonly Mock<ILogger<UserService>> _mockLogger;
     private readonly UserService _userService;
 
@@ -26,11 +28,24 @@ public class UserServiceTests
     {
         _mockUserRepository = new Mock<IUserRepository>();
         _mockPostRepository = new Mock<IPostRepository>();
+        _mockMemoryCache = new Mock<IMemoryCache>();
         _mockLogger = new Mock<ILogger<UserService>>();
+
+        // Configure mock cache - TryGetValue will always return false (cache miss)
+        // This forces all operations to hit the repository
+        _mockMemoryCache
+            .Setup(m => m.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny))
+            .Returns(false);
+
+        // Configure mock cache - Set should accept any calls
+        _mockMemoryCache
+            .Setup(m => m.CreateEntry(It.IsAny<object>()))
+            .Returns(new Mock<ICacheEntry>().Object);
 
         _userService = new UserService(
             _mockUserRepository.Object,
             _mockPostRepository.Object,
+            _mockMemoryCache.Object,
             _mockLogger.Object);
     }
 
@@ -43,6 +58,7 @@ public class UserServiceTests
         var action = () => new UserService(
             null!,
             _mockPostRepository.Object,
+            _mockMemoryCache.Object,
             _mockLogger.Object);
 
         action.Should().Throw<ArgumentNullException>()
@@ -56,10 +72,25 @@ public class UserServiceTests
         var action = () => new UserService(
             _mockUserRepository.Object,
             null!,
+            _mockMemoryCache.Object,
             _mockLogger.Object);
 
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("postRepository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullMemoryCache_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        var action = () => new UserService(
+            _mockUserRepository.Object,
+            _mockPostRepository.Object,
+            null!,
+            _mockLogger.Object);
+
+        action.Should().Throw<ArgumentNullException>()
+            .WithParameterName("cache");
     }
 
     [Fact]
@@ -69,6 +100,7 @@ public class UserServiceTests
         var action = () => new UserService(
             _mockUserRepository.Object,
             _mockPostRepository.Object,
+            _mockMemoryCache.Object,
             null!);
 
         action.Should().Throw<ArgumentNullException>()
