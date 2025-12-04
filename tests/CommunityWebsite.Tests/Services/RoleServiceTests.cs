@@ -29,6 +29,17 @@ public class RoleServiceTests
         _mockMemoryCache = new Mock<IMemoryCache>();
         _mockLogger = new Mock<ILogger<RoleService>>();
 
+        // Configure mock cache - TryGetValue will always return false (cache miss)
+        // This forces all operations to hit the repository
+        _mockMemoryCache
+            .Setup(m => m.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny))
+            .Returns(false);
+
+        // Configure mock cache - Set should accept any calls
+        _mockMemoryCache
+            .Setup(m => m.CreateEntry(It.IsAny<object>()))
+            .Returns(new Mock<ICacheEntry>().Object);
+
         _roleService = new RoleService(
             _mockRoleRepository.Object,
             _mockMemoryCache.Object,
