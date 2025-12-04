@@ -65,7 +65,11 @@ public class AuthController : ApiControllerBase
 
         if (!result.IsSuccess)
             return Unauthorized(new { error = result.ErrorMessage });
-
+        System.Diagnostics.Debug.Assert(result.Data != null, "Result data should not be null on success.");
+        System.Diagnostics.Debug.Assert(!string.IsNullOrEmpty(result.Data.Token), "Token should not be null or empty on success.");
+        System.Diagnostics.Debug.Assert(result.Data.UserId > 0, "UserId should be greater than zero on success.");
+        System.Diagnostics.Debug.Assert(!string.IsNullOrEmpty(result.Data.Username), "Username should not be null or empty on success.");
+        System.Diagnostics.Debug.Assert(!string.IsNullOrEmpty(result.Data.Email), "Email should not be null or empty on success.");
         return Ok(result.Data);
     }
 
