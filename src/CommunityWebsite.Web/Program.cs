@@ -26,11 +26,11 @@ try
     // Add MVC with Razor Views
     builder.Services.AddControllersWithViews();
 
-    // Add DbContext with SQL Server
+    // Add DbContext with SQLite
     builder.Services.AddDbContext<CommunityDbContext>(options =>
-        options.UseSqlServer(
+        options.UseSqlite(
             builder.Configuration.GetConnectionString("DefaultConnection") ??
-            "Server=(localdb)\\mssqllocaldb;Database=CommunityWebsite;Trusted_Connection=true;"));
+            "Data Source=CommunityWebsite.db"));
 
     // Register repositories - Dependency Inversion Principle
     builder.Services.AddScoped<IPostRepository, PostRepository>();
