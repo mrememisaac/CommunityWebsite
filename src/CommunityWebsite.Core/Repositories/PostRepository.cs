@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using CommunityWebsite.Core.Constants;
 using CommunityWebsite.Core.Data;
 using CommunityWebsite.Core.Models;
 using CommunityWebsite.Core.Repositories.Interfaces;
@@ -18,8 +19,11 @@ public class PostRepository : GenericRepository<Post>, IPostRepository
     /// Gets active (non-deleted, non-locked) posts with pagination.
     /// Demonstrates: Filtering, Pagination, Query optimization
     /// </summary>
-    public async Task<IEnumerable<Post>> GetActivePostsAsync(int pageNumber = 1, int pageSize = 10)
+    public async Task<IEnumerable<Post>> GetActivePostsAsync(int pageNumber = 1, int pageSize = 0)
     {
+        if (pageSize <= 0)
+            pageSize = PaginationDefaults.PostsPageSize;
+
         var skip = (pageNumber - 1) * pageSize;
 
         return await _dbSet
@@ -37,8 +41,11 @@ public class PostRepository : GenericRepository<Post>, IPostRepository
     /// Gets posts by category with pagination.
     /// Demonstrates: String comparison, Pagination, Eager loading
     /// </summary>
-    public async Task<IEnumerable<Post>> GetPostsByCategoryAsync(string category, int pageSize = 20)
+    public async Task<IEnumerable<Post>> GetPostsByCategoryAsync(string category, int pageSize = 0)
     {
+        if (pageSize <= 0)
+            pageSize = PaginationDefaults.DefaultPageSize;
+
         return await _dbSet
             .Where(p => p.Category == category && !p.IsDeleted)
             .OrderByDescending(p => p.CreatedAt)
@@ -86,8 +93,14 @@ public class PostRepository : GenericRepository<Post>, IPostRepository
     /// Gets trending posts based on view count over a period.
     /// Demonstrates: Date calculations, Ordering, Top N queries
     /// </summary>
-    public async Task<IEnumerable<Post>> GetTrendingPostsAsync(int days = 7, int limit = 10)
+    public async Task<IEnumerable<Post>> GetTrendingPostsAsync(int days = 0, int limit = 0)
     {
+        if (days <= 0)
+            days = PaginationDefaults.TrendingPostsDays;
+
+        if (limit <= 0)
+            limit = PaginationDefaults.FeaturedPostsLimit;
+
         var startDate = DateTime.UtcNow.AddDays(-days);
 
         return await _dbSet
@@ -116,6 +129,17 @@ public class PostRepository : GenericRepository<Post>, IPostRepository
             .Include(p => p.Author)
             .AsNoTracking()
             .ToListAsync();
+    }
+
+    /// <summary>
+    /// Gets the count of posts by a specific user.
+    /// Demonstrates: Efficient count query
+    /// </summary>
+    public async Task<int> GetPostCountAsync(int userId)
+    {
+        return await _dbSet
+            .Where(p => p.AuthorId == userId && !p.IsDeleted)
+            .CountAsync();
     }
 
     /// <summary>
