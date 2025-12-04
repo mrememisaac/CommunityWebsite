@@ -26,6 +26,9 @@ try
     // Add MVC with Razor Views
     builder.Services.AddControllersWithViews();
 
+    // Add in-memory caching
+    builder.Services.AddMemoryCache();
+
     // Add DbContext with SQLite
     builder.Services.AddDbContext<CommunityDbContext>(options =>
         options.UseSqlite(
