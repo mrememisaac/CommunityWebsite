@@ -1,10 +1,12 @@
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Requests;
 using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Models;
 using CommunityWebsite.Core.Repositories.Interfaces;
 using CommunityWebsite.Core.Services.Interfaces;
 using CommunityWebsite.Core.Validators.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace CommunityWebsite.Core.Services;
@@ -54,22 +56,24 @@ public class CommentService : ICommentService
             var comments = await _commentRepository.GetPostCommentsAsync(postId);
 
             var result = comments
-                .Where(c => c.ParentCommentId == null) // Only top-level comments
-                .Select(c => new CommentDto
-                {
-                    Id = c.Id,
-                    Content = c.Content,
-                    Author = c.Author != null ? new UserSummaryDto { Id = c.Author.Id, Username = c.Author.Username } : null,
-                    CreatedAt = c.CreatedAt,
-                    ReplyCount = c.Replies?.Count(r => !r.IsDeleted) ?? 0
-                })
+                .Select(c => c.ToCommentDto())
                 .ToList();
 
             return Result<IEnumerable<CommentDto>>.Success(result);
         }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error retrieving comments for post {PostId}", postId);
+            return Result<IEnumerable<CommentDto>>.Failure("Database error occurred while retrieving comments.");
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Request timeout retrieving comments for post {PostId}", postId);
+            return Result<IEnumerable<CommentDto>>.Failure("Request timeout while retrieving comments.");
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving comments for post {PostId}", postId);
+            _logger.LogError(ex, "Unexpected error retrieving comments for post {PostId}", postId);
             return Result<IEnumerable<CommentDto>>.Failure("An error occurred while retrieving comments.");
         }
     }
@@ -94,7 +98,7 @@ public class CommentService : ICommentService
             {
                 Id = comment.Id,
                 Content = comment.Content,
-                Author = comment.Author != null ? new UserSummaryDto { Id = comment.Author.Id, Username = comment.Author.Username } : null,
+                Author = comment.Author?.ToSummaryDto(),
                 CreatedAt = comment.CreatedAt,
                 UpdatedAt = comment.UpdatedAt,
                 PostId = comment.PostId,
@@ -105,7 +109,7 @@ public class CommentService : ICommentService
                     {
                         Id = r.Id,
                         Content = r.Content,
-                        Author = r.Author != null ? new UserSummaryDto { Id = r.Author.Id, Username = r.Author.Username } : null,
+                        Author = r.Author?.ToSummaryDto(),
                         CreatedAt = r.CreatedAt,
                         ReplyCount = 0
                     })
@@ -114,9 +118,19 @@ public class CommentService : ICommentService
 
             return Result<CommentDetailDto>.Success(result);
         }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error retrieving comment {CommentId}", commentId);
+            return Result<CommentDetailDto>.Failure("Database error occurred while retrieving the comment.");
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Request timeout retrieving comment {CommentId}", commentId);
+            return Result<CommentDetailDto>.Failure("Request timeout while retrieving the comment.");
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving comment {CommentId}", commentId);
+            _logger.LogError(ex, "Unexpected error retrieving comment {CommentId}", commentId);
             return Result<CommentDetailDto>.Failure("An error occurred while retrieving the comment.");
         }
     }
