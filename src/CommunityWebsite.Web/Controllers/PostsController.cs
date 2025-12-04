@@ -199,4 +199,26 @@ public class PostsController : ApiControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Gets all posts by a specific user
+    /// </summary>
+    [HttpGet("user/{userId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IEnumerable<PostSummaryDto>>> GetUserPosts(int userId)
+    {
+        _logger.LogInformation("GET /api/posts/user/{UserId}", userId);
+
+        if (userId <= 0)
+            return BadRequest(new { error = "Invalid user ID" });
+
+        var result = await _postService.GetPostsByUserAsync(userId);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
 }
+
