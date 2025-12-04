@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using CommunityWebsite.Core.Repositories.Interfaces;
+using CommunityWebsite.Core.Constants;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Responses;
+using CommunityWebsite.Core.Repositories.Interfaces;
 
 namespace CommunityWebsite.Web.Controllers;
 
@@ -36,6 +38,7 @@ public class UsersViewController : Controller
         }
 
         var posts = await _postRepository.GetUserPostsAsync(id);
+        var postCount = await _postRepository.GetPostCountAsync(id);
 
         var userProfile = new UserProfileDto
         {
@@ -45,23 +48,15 @@ public class UsersViewController : Controller
             Bio = user.Bio,
             ProfileImageUrl = user.ProfileImageUrl,
             CreatedAt = user.CreatedAt,
-            PostCount = posts.Count(),
+            PostCount = postCount,
             Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
         };
 
-        // Get recent posts for the profile page (limit to 5)
+        // Get recent posts for the profile page (limit to configured amount)
         var recentPosts = posts
             .OrderByDescending(p => p.CreatedAt)
-            .Take(5)
-            .Select(p => new PostSummaryDto
-            {
-                Id = p.Id,
-                Title = p.Title,
-                Preview = p.Content.Length > 150 ? p.Content.Substring(0, 150) + "..." : p.Content,
-                CreatedAt = p.CreatedAt,
-                ViewCount = p.ViewCount,
-                CommentCount = p.Comments.Count
-            })
+            .Take(PaginationDefaults.RecentPostsLimit)
+            .Select(p => p.ToSummaryDto())
             .ToList();
 
         ViewBag.UserProfile = userProfile;
