@@ -44,14 +44,15 @@ CommunityWebsite/
 
 RESTful endpoints for programmatic access (mobile apps, SPAs, third-party integrations):
 
-| Controller           | Route           | Purpose                                   |
-| -------------------- | --------------- | ----------------------------------------- |
-| `AuthController`     | `/api/auth`     | Authentication (login, register, refresh) |
-| `PostsController`    | `/api/posts`    | CRUD operations for posts, user posts     |
-| `CommentsController` | `/api/comments` | Comment management                        |
-| `EventsController`   | `/api/events`   | Event management                          |
-| `UsersController`    | `/api/users`    | User profiles, user lookup                |
-| `RolesController`    | `/api/roles`    | Role management (admin)                   |
+| Controller             | Route                   | Purpose                                   |
+| ---------------------- | ----------------------- | ----------------------------------------- |
+| `AuthController`       | `/api/auth`             | Authentication (login, register, refresh) |
+| `PostsController`      | `/api/posts`            | CRUD operations for posts, user posts     |
+| `CommentsController`   | `/api/comments`         | Comment management                        |
+| `EventsController`     | `/api/events`           | Event management                          |
+| `UsersController`      | `/api/users`            | User profiles, user lookup                |
+| `RolesController`      | `/api/roles`            | Role management (admin)                   |
+| `AdminUsersController` | `/api/admin/adminusers` | Admin user management (admin only)        |
 
 **Characteristics:**
 
@@ -65,13 +66,14 @@ RESTful endpoints for programmatic access (mobile apps, SPAs, third-party integr
 
 Server-rendered HTML pages with Razor views:
 
-| Controller             | Route         | Purpose                           |
-| ---------------------- | ------------- | --------------------------------- |
-| `HomeController`       | `/`, `/Home`  | Landing page, about, contact      |
-| `PostsViewController`  | `/Posts`      | Browse, view posts, user's posts  |
-| `EventsViewController` | `/Events`     | Browse and view events            |
-| `AccountController`    | `/Account`    | Login, register, profile pages    |
-| `UsersViewController`  | `/users/{id}` | Public user profiles with history |
+| Controller                 | Route          | Purpose                           |
+| -------------------------- | -------------- | --------------------------------- |
+| `HomeController`           | `/`, `/Home`   | Landing page, about, contact      |
+| `PostsViewController`      | `/Posts`       | Browse, view posts, user's posts  |
+| `EventsViewController`     | `/Events`      | Browse and view events            |
+| `AccountController`        | `/Account`     | Login, register, profile pages    |
+| `UsersViewController`      | `/users/{id}`  | Public user profiles with history |
+| `AdminUsersViewController` | `/admin/users` | Admin user management (admin)     |
 
 **Characteristics:**
 

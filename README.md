@@ -12,6 +12,7 @@ This community website platform demonstrates:
 - **Testing**: Comprehensive unit tests with xUnit, Moq, and FluentAssertions
 - **Performance**: Optimized EF Core queries with indexes and proper pagination
 - **User Management**: Complete user profiles, post history, and user-specific content views
+- **Admin Features**: Role-based admin panel for user management with role assignment
 
 ## 📦 Tech Stack
 
