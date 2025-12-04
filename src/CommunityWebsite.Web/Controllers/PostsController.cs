@@ -27,6 +27,7 @@ public class PostsController : ApiControllerBase
     /// Gets a specific post with all comments
     /// </summary>
     [HttpGet("{id}")]
+    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)] // 5 minutes
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -49,6 +50,7 @@ public class PostsController : ApiControllerBase
     /// Gets featured/trending posts
     /// </summary>
     [HttpGet("featured")]
+    [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)] // 1 hour
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<PostSummaryDto>>> GetFeaturedPosts()
@@ -68,6 +70,7 @@ public class PostsController : ApiControllerBase
     /// Gets posts by category
     /// </summary>
     [HttpGet("category/{category}")]
+    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)] // 5 minutes
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IEnumerable<PostSummaryDto>>> GetByCategory(
@@ -88,6 +91,7 @@ public class PostsController : ApiControllerBase
     /// Searches posts by query term
     /// </summary>
     [HttpGet("search")]
+    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)] // 5 minutes
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IEnumerable<PostSummaryDto>>> SearchPosts([FromQuery] string q)
