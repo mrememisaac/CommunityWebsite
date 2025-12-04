@@ -188,6 +188,102 @@ Successfully implemented and integrated all 10 optional enhancements to the Comm
 
 ---
 
+## 🆕 User Profile & Content Discovery Feature
+
+### Overview
+
+After completing the 10 enhancements, a comprehensive user profile viewing system was implemented to enable content discovery and user engagement:
+
+**Components:**
+
+- Public user profile pages at `/users/{id}`
+- User-specific post viewing at `/Posts/MyPosts`
+- API endpoint for retrieving user posts: `GET /api/posts/user/{userId}`
+- Profile links integrated throughout the application
+
+### Files Added
+
+1. **Controllers**
+
+   - `Controllers/UsersViewController.cs` - Public user profile view controller
+   - Updated `Controllers/PostsController.cs` - Added user posts endpoint
+
+2. **Views**
+
+   - `Views/Users/Profile.cshtml` - Public user profile page with post history
+   - `Views/Posts/MyPosts.cshtml` - User's own posts with search & sort
+
+3. **Services**
+   - Updated `IPostService` - Added GetPostsByUserAsync method
+   - Updated `PostService` - Implemented user post retrieval
+
+### Files Modified
+
+1. **Views** (Added profile links)
+   - `Views/Posts/Index.cshtml` - Author names link to profiles
+   - `Views/Posts/Details.cshtml` - Post author and comments link to profiles
+   - `Views/Events/Index.cshtml` - Organizer names link to profiles
+   - `Views/Events/Details.cshtml` - Organizer links to profile
+
+### API Endpoints
+
+```
+GET /users/{id}               - Public user profile page
+GET /Posts/MyPosts            - Current user's posts
+GET /api/posts/user/{userId}  - User's posts API
+```
+
+### Features
+
+✅ **User Profiles**
+
+- Display user information: username, email, bio, roles, join date
+- Show user statistics: post count, role count
+- List recent posts (5 most recent)
+- Edit button only visible to profile owner
+
+✅ **MyPosts Page**
+
+- Search posts by title/content
+- Sort: Newest, Oldest, Most Comments, Most Views
+- Date range filtering capability
+- Edit/Delete actions for post owner
+
+✅ **Profile Discovery**
+
+- Click author names/avatars to view profiles
+- Navigate between users easily
+- See user engagement through post counts
+- Browse user's recent content
+
+### Security & Authorization
+
+✅ **Public Access**
+
+- Profiles visible to all (authenticated and anonymous)
+- No authorization required to view profiles
+
+✅ **Ownership Verification**
+
+- Edit options only shown to profile owner
+- Server-side verification on edit/delete operations
+
+✅ **Data Privacy**
+
+- Deleted posts excluded from profile
+- Only published content visible
+- Email displayed (can be hidden in future)
+
+### Build Status
+
+✅ **Build Successful**
+
+- 0 errors
+- 14 warnings (all pre-existing)
+- All feature code compiles successfully
+
+---
+
 ## 📊 Test Results
 
 ```
