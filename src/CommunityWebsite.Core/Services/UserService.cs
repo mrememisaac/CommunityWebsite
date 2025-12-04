@@ -4,6 +4,7 @@ using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Models;
 using CommunityWebsite.Core.Repositories.Interfaces;
 using CommunityWebsite.Core.Services.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace CommunityWebsite.Core.Services;
@@ -16,20 +17,36 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IPostRepository _postRepository;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<UserService> _logger;
+
+    // Cache keys
+    private const string UserPostCountCacheKeyPrefix = "post_count_";
+    private const string UserCommentCountCacheKeyPrefix = "comment_count_";
+    private const string UserRolesCacheKeyPrefix = "user_roles_";
+
+    // Cache expiration settings
+    private static readonly MemoryCacheEntryOptions UserStatsCacheOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30),
+        SlidingExpiration = TimeSpan.FromMinutes(15),
+        Size = 1
+    };
 
     public UserService(
         IUserRepository userRepository,
         IPostRepository postRepository,
+        IMemoryCache cache,
         ILogger<UserService> logger)
     {
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         _postRepository = postRepository ?? throw new ArgumentNullException(nameof(postRepository));
+        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
-    /// Gets a user's profile with roles and post count
+    /// Gets a user's profile with roles and post count (with caching)
     /// </summary>
     public async Task<Result<UserProfileDto>> GetUserProfileAsync(int userId)
     {
@@ -48,7 +65,17 @@ public class UserService : IUserService
                 return Result<UserProfileDto>.Failure("User not found");
             }
 
-            var posts = await _postRepository.GetUserPostsAsync(userId);
+            // Get post count from cache or compute it
+            var postCountCacheKey = $"{UserPostCountCacheKeyPrefix}{userId}";
+            if (!_cache.TryGetValue(postCountCacheKey, out int postCount))
+            {
+                var posts = await _postRepository.GetUserPostsAsync(userId);
+                postCount = posts.Count();
+
+                // Cache the result
+                _cache.Set(postCountCacheKey, postCount, UserStatsCacheOptions);
+                _logger.LogDebug("Post count for user {UserId} cached", userId);
+            }
 
             var profile = new UserProfileDto
             {
@@ -58,7 +85,7 @@ public class UserService : IUserService
                 Bio = user.Bio,
                 ProfileImageUrl = user.ProfileImageUrl,
                 CreatedAt = user.CreatedAt,
-                PostCount = posts.Count(),
+                PostCount = postCount,
                 Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
             };
 
