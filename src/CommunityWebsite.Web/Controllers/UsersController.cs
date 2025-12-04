@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using CommunityWebsite.Core.Repositories.Interfaces;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Models;
+using CommunityWebsite.Core.Repositories.Interfaces;
 using CommunityWebsite.Core.Services.Interfaces;
 
 namespace CommunityWebsite.Web.Controllers;
@@ -39,7 +40,7 @@ public class UsersController : ApiControllerBase
         if (user == null)
             return NotFound();
 
-        var posts = await _postRepository.GetUserPostsAsync(id);
+        var postCount = await _postRepository.GetPostCountAsync(id);
 
         return Ok(new UserProfileDto
         {
@@ -49,7 +50,7 @@ public class UsersController : ApiControllerBase
             Bio = user.Bio,
             ProfileImageUrl = user.ProfileImageUrl,
             CreatedAt = user.CreatedAt,
-            PostCount = posts.Count(),
+            PostCount = postCount,
             Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
         });
     }
