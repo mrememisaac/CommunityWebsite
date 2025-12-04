@@ -1,0 +1,143 @@
+@using CommunityWebsite.Core.DTOs.Responses
+@model IEnumerable<AdminUserDto>
+
+@{
+    ViewData["Title"] = "User Management";
+}
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">User Management</h1>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" name="searchTerm" class="form-control" placeholder="Search by username or email..." value="@ViewBag.SearchTerm">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                </div>
+                @if (!string.IsNullOrEmpty(ViewBag.SearchTerm))
+                {
+                    <div class="col-md-2">
+                        <a href="/admin/users" class="btn btn-secondary w-100">Clear</a>
+                    </div>
+                }
+            </form>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(ViewBag.Error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @ViewBag.Error
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Users Table -->
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Roles</th>
+                    <th>Status</th>
+                    <th>Posts</th>
+                    <th>Comments</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@user.Username</strong>
+                        </td>
+                        <td>@user.Email</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(user.Roles))
+                            {
+                                <span class="badge bg-info">@user.Roles</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">No roles</span>
+                            }
+                        </td>
+                        <td>
+                            @if (user.IsActive)
+                            {
+                                <span class="badge bg-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Inactive</span>
+                            }
+                        </td>
+                        <td>@user.PostCount</td>
+                        <td>@user.CommentCount</td>
+                        <td>@user.CreatedAt.ToString("MMM d, yyyy")</td>
+                        <td>
+                            <a href="/admin/users/@user.Id" class="btn btn-sm btn-primary">View</a>
+                            @if (user.IsActive)
+                            {
+                                <button type="button" class="btn btn-sm btn-warning" onclick="deactivateUser(@user.Id, '@user.Username')">Deactivate</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-sm btn-success" onclick="reactivateUser(@user.Id, '@user.Username')">Activate</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            @if (!string.IsNullOrEmpty(ViewBag.SearchTerm))
+            {
+                <p>No users found matching your search.</p>
+            }
+            else
+            {
+                <p>No users found.</p>
+            }
+        </div>
+    }
+</div>
+
+<script>
+    function deactivateUser(userId, username) {
+        if (confirm(`Are you sure you want to deactivate ${username}?`)) {
+            fetch(`/api/admin/adminusers/${userId}/deactivate`, { method: 'POST' })
+                .then(r => r.json())
+                .then(d => {
+                    alert(d);
+                    location.reload();
+                })
+                .catch(e => alert('Error: ' + e));
+        }
+    }
+
+    function reactivateUser(userId, username) {
+        if (confirm(`Are you sure you want to reactivate ${username}?`)) {
+            fetch(`/api/admin/adminusers/${userId}/reactivate`, { method: 'POST' })
+                .then(r => r.json())
+                .then(d => {
+                    alert(d);
+                    location.reload();
+                })
+                .catch(e => alert('Error: ' + e));
+        }
+    }
+</script>

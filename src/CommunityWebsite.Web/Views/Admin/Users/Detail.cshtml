@@ -1,0 +1,196 @@
+@using CommunityWebsite.Core.DTOs.Responses
+@model AdminUserDetailDto
+
+@{
+    ViewData["Title"] = $"Manage {Model.Username}";
+}
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-8">
+            <h1>@Model.Username</h1>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">User Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small">Email</label>
+                            <p class="fw-bold">@Model.Email</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Status</label>
+                            <p class="fw-bold">
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Inactive</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small">Joined</label>
+                            <p class="fw-bold">@Model.CreatedAt.ToString("MMMM d, yyyy")</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Last Updated</label>
+                            <p class="fw-bold">@Model.UpdatedAt.ToString("MMMM d, yyyy")</p>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Bio))
+                    {
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="text-muted small">Bio</label>
+                                <p>@Model.Bio</p>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="text-muted small">Posts</label>
+                            <p class="fw-bold">@Model.PostCount</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Comments</label>
+                            <p class="fw-bold">@Model.CommentCount</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Role Management -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Role Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Current Roles</label>
+                        <div>
+                            @if (Model.Roles.Any())
+                            {
+                                @foreach (var role in Model.Roles)
+                                {
+                                    <span class="badge bg-primary me-2 mb-2">
+                                        @role.Name
+                                        <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.7rem;" onclick="removeRole(@Model.Id, '@role.Name')"></button>
+                                    </span>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-muted">No roles assigned</p>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="roleSelect" class="form-label">Assign Role</label>
+                        <div class="input-group">
+                            <select id="roleSelect" class="form-select">
+                                <option value="">Select a role...</option>
+                                @foreach (var role in (ViewBag.AvailableRoles as IEnumerable<RoleDto>) ?? new List<RoleDto>())
+                                {
+                                    @if (!Model.Roles.Any(r => r.Id == role.Id))
+                                    {
+                                        <option value="@role.Name">@role.Name</option>
+                                    }
+                                }
+                            </select>
+                            <button type="button" class="btn btn-success" onclick="assignRole(@Model.Id)">Assign</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Actions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Account Actions</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.IsActive)
+                    {
+                        <button type="button" class="btn btn-warning" onclick="deactivateUser(@Model.Id, '@Model.Username')">
+                            Deactivate Account
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-success" onclick="reactivateUser(@Model.Id, '@Model.Username')">
+                            Reactivate Account
+                        </button>
+                    }
+                    <a href="/admin/users" class="btn btn-secondary">Back to Users</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function assignRole(userId) {
+        const roleSelect = document.getElementById('roleSelect');
+        const roleName = roleSelect.value;
+
+        if (!roleName) {
+            alert('Please select a role');
+            return;
+        }
+
+        fetch(`/api/admin/adminusers/${userId}/roles/${roleName}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(d => {
+                alert(d);
+                location.reload();
+            })
+            .catch(e => alert('Error: ' + e));
+    }
+
+    function removeRole(userId, roleName) {
+        if (confirm(`Are you sure you want to remove the ${roleName} role?`)) {
+            fetch(`/api/admin/adminusers/${userId}/roles/${roleName}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(d => {
+                    alert(d);
+                    location.reload();
+                })
+                .catch(e => alert('Error: ' + e));
+        }
+    }
+
+    function deactivateUser(userId, username) {
+        if (confirm(`Are you sure you want to deactivate ${username}?`)) {
+            fetch(`/api/admin/adminusers/${userId}/deactivate`, { method: 'POST' })
+                .then(r => r.json())
+                .then(d => {
+                    alert(d);
+                    location.reload();
+                })
+                .catch(e => alert('Error: ' + e));
+        }
+    }
+
+    function reactivateUser(userId, username) {
+        if (confirm(`Are you sure you want to reactivate ${username}?`)) {
+            fetch(`/api/admin/adminusers/${userId}/reactivate`, { method: 'POST' })
+                .then(r => r.json())
+                .then(d => {
+                    alert(d);
+                    location.reload();
+                })
+                .catch(e => alert('Error: ' + e));
+        }
+    }
+</script>
