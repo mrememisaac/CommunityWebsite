@@ -157,4 +157,16 @@ public class PostsViewController : ViewControllerBase
 
         return View("~/Views/Posts/Edit.cshtml", postDto);
     }
+
+    /// <summary>
+    /// Displays the current user's posts
+    /// </summary>
+    [HttpGet]
+    [Route("Posts/MyPosts")]
+    public IActionResult MyPosts()
+    {
+        _logger.LogInformation("GET Posts/MyPosts");
+        return View("~/Views/Posts/MyPosts.cshtml");
+    }
 }
+
