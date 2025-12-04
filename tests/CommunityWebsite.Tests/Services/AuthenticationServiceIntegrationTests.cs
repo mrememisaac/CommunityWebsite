@@ -239,6 +239,6 @@ public class AuthenticationServiceIntegrationTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("Invalid token");
+        result.ErrorMessage.Should().Contain("Invalid or expired token");
     }
 }
