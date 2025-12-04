@@ -104,5 +104,10 @@ public class TokenService : ITokenService
             // Token validation failed - could be tampering attempt
             return null;
         }
+        catch (ArgumentException)
+        {
+            // Token format is invalid - malformed token
+            return null;
+        }
     }
 }
