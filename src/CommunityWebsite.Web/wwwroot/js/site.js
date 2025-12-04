@@ -40,12 +40,8 @@ function getCurrentUser() {
  * Save auth data after login
  */
 function saveAuthData(token, user) {
-    console.log('saveAuthData called with:', { token: token.substring(0, 20) + '...', user });
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
-    console.log('Auth data saved to localStorage');
-    console.log('TOKEN_KEY in storage:', localStorage.getItem(TOKEN_KEY) ? 'YES' : 'NO');
-    console.log('USER_KEY in storage:', localStorage.getItem(USER_KEY) ? 'YES' : 'NO');
     updateAuthUI();
 }
 
@@ -64,18 +60,14 @@ function clearAuthData() {
 function updateAuthUI() {
     const isAuthenticated = isLoggedIn();
     const user = getCurrentUser();
-    
-    console.log('updateAuthUI called - isAuthenticated:', isAuthenticated, 'user:', user);
 
     if (isAuthenticated && user) {
         $('.auth-logged-out').addClass('d-none');
         $('.auth-logged-in').removeClass('d-none');
         $('#currentUsername').text(user.username || 'User');
-        console.log('UI updated to logged in state');
     } else {
         $('.auth-logged-out').removeClass('d-none');
         $('.auth-logged-in').addClass('d-none');
-        console.log('UI updated to logged out state');
     }
 }
 
