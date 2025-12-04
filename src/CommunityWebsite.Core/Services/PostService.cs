@@ -8,6 +8,7 @@ using CommunityWebsite.Core.Repositories.Interfaces;
 using CommunityWebsite.Core.Services.Interfaces;
 using CommunityWebsite.Core.Validators.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace CommunityWebsite.Core.Services;
@@ -21,17 +22,38 @@ public class PostService : IPostService
     private readonly IPostRepository _postRepository;
     private readonly IUserRepository _userRepository;
     private readonly IPostValidator _postValidator;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<PostService> _logger;
+
+    // Cache keys
+    private const string FeaturedPostsCacheKey = "featured_posts";
+    private const string SearchResultsCacheKeyPrefix = "search_results_";
+
+    // Cache expiration settings
+    private static readonly MemoryCacheEntryOptions PostCacheOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
+        SlidingExpiration = TimeSpan.FromMinutes(30),
+        Size = 1
+    };
+
+    private static readonly MemoryCacheEntryOptions SearchCacheOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+        Size = 1
+    };
 
     public PostService(
         IPostRepository postRepository,
         IUserRepository userRepository,
         IPostValidator postValidator,
+        IMemoryCache cache,
         ILogger<PostService> logger)
     {
         _postRepository = postRepository ?? throw new ArgumentNullException(nameof(postRepository));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         _postValidator = postValidator ?? throw new ArgumentNullException(nameof(postValidator));
+        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -84,11 +106,22 @@ public class PostService : IPostService
         {
             _logger.LogInformation("Retrieving featured posts");
 
+            // Try to get from cache
+            if (_cache.TryGetValue(FeaturedPostsCacheKey, out IEnumerable<PostSummaryDto>? cachedPosts))
+            {
+                _logger.LogDebug("Featured posts retrieved from cache");
+                return Result<IEnumerable<PostSummaryDto>>.Success(cachedPosts!);
+            }
+
             var posts = await _postRepository.GetTrendingPostsAsync(
                 days: PaginationDefaults.FeaturedPostsExtendedDays,
                 limit: PaginationDefaults.FeaturedPostsExtendedLimit);
 
             var result = posts.Select(p => p.ToSummaryDto()).ToList();
+
+            // Cache the result
+            _cache.Set(FeaturedPostsCacheKey, (IEnumerable<PostSummaryDto>)result, PostCacheOptions);
+            _logger.LogDebug("Featured posts cached");
 
             return Result<IEnumerable<PostSummaryDto>>.Success(result);
         }
@@ -168,6 +201,10 @@ public class PostService : IPostService
             var createdPost = await _postRepository.AddAsync(post);
             await _postRepository.SaveChangesAsync();
 
+            // Invalidate featured posts cache
+            _cache.Remove(FeaturedPostsCacheKey);
+            _logger.LogDebug("Cache invalidated: {CacheKey}", FeaturedPostsCacheKey);
+
             _logger.LogInformation("Post {PostId} created successfully by user {UserId}", createdPost.Id, request.AuthorId);
 
             var user = await _userRepository.GetByIdAsync(request.AuthorId);
@@ -217,6 +254,10 @@ public class PostService : IPostService
             await _postRepository.UpdateAsync(post);
             await _postRepository.SaveChangesAsync();
 
+            // Invalidate featured posts cache
+            _cache.Remove(FeaturedPostsCacheKey);
+            _logger.LogDebug("Cache invalidated: {CacheKey}", FeaturedPostsCacheKey);
+
             _logger.LogInformation("Post {PostId} updated successfully", postId);
 
             var updatedPost = await _postRepository.GetPostWithCommentsAsync(postId);
@@ -248,6 +289,10 @@ public class PostService : IPostService
             await _postRepository.UpdateAsync(post);
             await _postRepository.SaveChangesAsync();
 
+            // Invalidate featured posts cache
+            _cache.Remove(FeaturedPostsCacheKey);
+            _logger.LogDebug("Cache invalidated: {CacheKey}", FeaturedPostsCacheKey);
+
             _logger.LogInformation("Post {PostId} deleted successfully", postId);
             return Result.Success();
         }
@@ -267,6 +312,15 @@ public class PostService : IPostService
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return Result<IEnumerable<PostSummaryDto>>.Failure("Search term is required.");
 
+            var cacheKey = $"{SearchResultsCacheKeyPrefix}{searchTerm.ToLower()}";
+
+            // Try to get from cache
+            if (_cache.TryGetValue(cacheKey, out IEnumerable<PostSummaryDto>? cachedResults))
+            {
+                _logger.LogDebug("Search results for '{SearchTerm}' retrieved from cache", searchTerm);
+                return Result<IEnumerable<PostSummaryDto>>.Success(cachedResults!);
+            }
+
             var posts = await _postRepository.SearchPostsAsync(searchTerm);
 
             var result = posts.Select(p => new PostSummaryDto
@@ -280,6 +334,10 @@ public class PostService : IPostService
                 ViewCount = p.ViewCount,
                 CommentCount = p.Comments.Count
             }).ToList();
+
+            // Cache the result for 5 minutes
+            _cache.Set(cacheKey, (IEnumerable<PostSummaryDto>)result, SearchCacheOptions);
+            _logger.LogDebug("Search results for '{SearchTerm}' cached", searchTerm);
 
             return Result<IEnumerable<PostSummaryDto>>.Success(result);
         }
