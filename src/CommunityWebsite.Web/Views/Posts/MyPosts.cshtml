@@ -1,0 +1,239 @@
+@{
+    ViewData["Title"] = "My Posts";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="fw-bold mb-1">
+                <i class="bi bi-file-text me-2"></i>My Posts
+            </h1>
+            <p class="text-muted">View and manage all your posts</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="/Posts/Create" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Create New Post
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="searchInput" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search your posts...">
+                </div>
+                <div class="col-md-6">
+                    <label for="sortSelect" class="form-label">Sort By</label>
+                    <select class="form-select" id="sortSelect">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="title">Title (A-Z)</option>
+                        <option value="comments">Most Comments</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Posts List -->
+    <div id="postsList">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="d-none">
+        <div class="card border-0 bg-light">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-file-earmark-text display-1 text-muted"></i>
+                <h4 class="mt-3 mb-2">No posts yet</h4>
+                <p class="text-muted mb-3">Start sharing your thoughts with the community</p>
+                <a href="/Posts/Create" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Create First Post
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function isAuthenticated() {
+            return @User.Identity.IsAuthenticated.ToString().ToLower();
+        }
+
+        let allPosts = [];
+        let currentUserId = localStorage.getItem('userId');
+
+        $(document).ready(function () {
+            // Check authentication
+            if (!isAuthenticated()) {
+                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+
+            loadMyPosts();
+
+            // Search functionality
+            $('#searchInput').on('keyup', function () {
+                filterAndDisplayPosts();
+            });
+
+            // Sort functionality
+            $('#sortSelect').on('change', function () {
+                filterAndDisplayPosts();
+            });
+        });
+
+        function loadMyPosts() {
+            apiRequest('/api/posts/user/' + currentUserId, 'GET')
+                .done(function (result) {
+                    if (result && Array.isArray(result)) {
+                        allPosts = result;
+                        if (allPosts.length === 0) {
+                            showEmptyState();
+                        } else {
+                            filterAndDisplayPosts();
+                        }
+                    } else {
+                        showEmptyState();
+                    }
+                })
+                .fail(function () {
+                    showEmptyState();
+                });
+        }
+
+        function filterAndDisplayPosts() {
+            const searchTerm = $('#searchInput').val().toLowerCase();
+            const sortBy = $('#sortSelect').val();
+
+            // Filter posts
+            let filteredPosts = allPosts.filter(post =>
+                post.title.toLowerCase().includes(searchTerm) ||
+                (post.content && post.content.toLowerCase().includes(searchTerm))
+            );
+
+            // Sort posts
+            filteredPosts = sortPosts(filteredPosts, sortBy);
+
+            if (filteredPosts.length === 0) {
+                $('#postsList').html(`
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No posts match your search criteria.
+                    </div>
+                `);
+            } else {
+                displayPosts(filteredPosts);
+            }
+        }
+
+        function sortPosts(posts, sortBy) {
+            const sorted = [...posts];
+            switch (sortBy) {
+                case 'oldest':
+                    sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                    break;
+                case 'title':
+                    sorted.sort((a, b) => a.title.localeCompare(b.title));
+                    break;
+                case 'comments':
+                    sorted.sort((a, b) => (b.commentCount || 0) - (a.commentCount || 0));
+                    break;
+                case 'newest':
+                default:
+                    sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    break;
+            }
+            return sorted;
+        }
+
+        function displayPosts(posts) {
+            let html = '';
+            posts.forEach(post => {
+                const createdDate = new Date(post.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+
+                html += `
+                    <div class="card mb-3 border-0 shadow-sm hover-shadow transition">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">
+                                        <a href="/Posts/Details/${post.id}" class="text-decoration-none">
+                                            ${escapeHtml(post.title)}
+                                        </a>
+                                    </h5>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>${createdDate}
+                                    </small>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/Posts/Edit/${post.id}" class="btn btn-outline-primary" title="Edit post">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" onclick="deletePost(${post.id})" title="Delete post">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="card-text text-muted mb-3">
+                                ${escapeHtml(post.content?.substring(0, 100))}${(post.content?.length || 0) > 100 ? '...' : ''}
+                            </p>
+                            <div class="d-flex gap-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-chat me-1"></i><span id="comment-count-${post.id}">${post.commentCount || 0}</span> Comments
+                                </small>
+                                <a href="/Posts/Details/${post.id}" class="small text-primary text-decoration-none">
+                                    Read more <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            $('#postsList').html(html);
+        }
+
+        function deletePost(postId) {
+            if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+                apiRequest(`/api/posts/${postId}`, 'DELETE')
+                    .done(function () {
+                        showToast('Post deleted successfully', 'success');
+                        allPosts = allPosts.filter(p => p.id !== postId);
+                        if (allPosts.length === 0) {
+                            showEmptyState();
+                        } else {
+                            filterAndDisplayPosts();
+                        }
+                    })
+                    .fail(function (xhr) {
+                        showToast('Failed to delete post', 'error');
+                    });
+            }
+        }
+
+        function showEmptyState() {
+            $('#postsList').addClass('d-none');
+            $('#emptyState').removeClass('d-none');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+}
