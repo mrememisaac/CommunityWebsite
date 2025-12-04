@@ -11,4 +11,5 @@ public interface ICommentRepository : IRepository<Comment>
     Task<IEnumerable<Comment>> GetUserCommentsAsync(int userId);
     Task<Comment?> GetCommentWithRepliesAsync(int commentId);
     Task<int> GetCommentCountForPostAsync(int postId);
+    Task<int> GetCommentCountByUserAsync(int userId);
 }

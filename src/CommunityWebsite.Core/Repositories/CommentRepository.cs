@@ -51,4 +51,11 @@ public class CommentRepository : GenericRepository<Comment>, ICommentRepository
             .Where(c => c.PostId == postId && !c.IsDeleted)
             .CountAsync();
     }
+
+    public async Task<int> GetCommentCountByUserAsync(int userId)
+    {
+        return await _dbSet
+            .Where(c => c.AuthorId == userId && !c.IsDeleted)
+            .CountAsync();
+    }
 }
