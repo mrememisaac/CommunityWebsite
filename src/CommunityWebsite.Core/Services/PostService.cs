@@ -1,10 +1,13 @@
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.Constants;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Requests;
 using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Models;
 using CommunityWebsite.Core.Repositories.Interfaces;
 using CommunityWebsite.Core.Services.Interfaces;
 using CommunityWebsite.Core.Validators.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace CommunityWebsite.Core.Services;
@@ -58,9 +61,19 @@ public class PostService : IPostService
             var result = MapPostToDetailDto(post);
             return Result<PostDetailDto?>.Success(result);
         }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error retrieving post {PostId}", postId);
+            return Result<PostDetailDto?>.Failure("Database error occurred while retrieving the post.");
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Request timeout retrieving post {PostId}", postId);
+            return Result<PostDetailDto?>.Failure("Request timeout while retrieving the post.");
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving post {PostId}", postId);
+            _logger.LogError(ex, "Unexpected error retrieving post {PostId}", postId);
             return Result<PostDetailDto?>.Failure("An error occurred while retrieving the post.");
         }
     }
@@ -71,25 +84,27 @@ public class PostService : IPostService
         {
             _logger.LogInformation("Retrieving featured posts");
 
-            var posts = await _postRepository.GetTrendingPostsAsync(days: 30, limit: 5);
+            var posts = await _postRepository.GetTrendingPostsAsync(
+                days: PaginationDefaults.FeaturedPostsExtendedDays,
+                limit: PaginationDefaults.FeaturedPostsExtendedLimit);
 
-            var result = posts.Select(p => new PostSummaryDto
-            {
-                Id = p.Id,
-                Title = p.Title,
-                Preview = TruncateContent(p.Content, 150),
-                Author = new UserSummaryDto { Id = p.Author.Id, Username = p.Author.Username },
-                Category = p.Category,
-                CreatedAt = p.CreatedAt,
-                ViewCount = p.ViewCount,
-                CommentCount = p.Comments.Count
-            }).ToList();
+            var result = posts.Select(p => p.ToSummaryDto()).ToList();
 
             return Result<IEnumerable<PostSummaryDto>>.Success(result);
         }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error retrieving featured posts");
+            return Result<IEnumerable<PostSummaryDto>>.Failure("Database error occurred while retrieving featured posts.");
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Request timeout retrieving featured posts");
+            return Result<IEnumerable<PostSummaryDto>>.Failure("Request timeout while retrieving featured posts.");
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving featured posts");
+            _logger.LogError(ex, "Unexpected error retrieving featured posts");
             return Result<IEnumerable<PostSummaryDto>>.Failure("An error occurred while retrieving featured posts.");
         }
     }
@@ -106,25 +121,25 @@ public class PostService : IPostService
             if (pageNumber < 1)
                 return Result<IEnumerable<PostSummaryDto>>.Failure("Page number must be greater than zero.");
 
-            var posts = await _postRepository.GetPostsByCategoryAsync(category, pageSize: 20);
+            var posts = await _postRepository.GetPostsByCategoryAsync(category, pageSize: PaginationDefaults.DefaultPageSize);
 
-            var result = posts.Select(p => new PostSummaryDto
-            {
-                Id = p.Id,
-                Title = p.Title,
-                Preview = TruncateContent(p.Content, 200),
-                Author = new UserSummaryDto { Id = p.Author.Id, Username = p.Author.Username },
-                Category = p.Category,
-                CreatedAt = p.CreatedAt,
-                ViewCount = p.ViewCount,
-                CommentCount = p.Comments.Count
-            }).ToList();
+            var result = posts.Select(p => p.ToSummaryDto()).ToList();
 
             return Result<IEnumerable<PostSummaryDto>>.Success(result);
         }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error retrieving posts for category {Category}", category);
+            return Result<IEnumerable<PostSummaryDto>>.Failure("Database error occurred while retrieving posts.");
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Request timeout retrieving posts for category {Category}", category);
+            return Result<IEnumerable<PostSummaryDto>>.Failure("Request timeout while retrieving posts.");
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving posts for category {Category}", category);
+            _logger.LogError(ex, "Unexpected error retrieving posts for category {Category}", category);
             return Result<IEnumerable<PostSummaryDto>>.Failure("An error occurred while retrieving posts.");
         }
     }
