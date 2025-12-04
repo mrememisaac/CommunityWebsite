@@ -65,9 +65,21 @@ function updateAuthUI() {
         $('.auth-logged-out').addClass('d-none');
         $('.auth-logged-in').removeClass('d-none');
         $('#currentUsername').text(user.username || 'User');
+
+        // Show Members link to all authenticated users
+        $('.members-link').removeClass('d-none');
+
+        // Show Admin link only to admins
+        if (user.roles && user.roles.includes('Admin')) {
+            $('.admin-link').removeClass('d-none');
+        } else {
+            $('.admin-link').addClass('d-none');
+        }
     } else {
         $('.auth-logged-out').removeClass('d-none');
         $('.auth-logged-in').addClass('d-none');
+        $('.members-link').addClass('d-none');
+        $('.admin-link').addClass('d-none');
     }
 }
 
