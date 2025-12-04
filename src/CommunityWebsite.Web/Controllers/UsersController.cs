@@ -32,6 +32,7 @@ public class UsersController : ApiControllerBase
     /// Gets a user's profile with their roles
     /// </summary>
     [HttpGet("{id}")]
+    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)] // 5 minutes
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserProfileDto>> GetUser(int id)
@@ -59,6 +60,7 @@ public class UsersController : ApiControllerBase
     /// Gets users with a specific role - demonstrates LINQ filtering
     /// </summary>
     [HttpGet("role/{roleName}")]
+    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)] // 5 minutes
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<UserSummaryDto>>> GetUsersByRole(string roleName)
     {
@@ -75,6 +77,7 @@ public class UsersController : ApiControllerBase
     /// Gets active users with pagination
     /// </summary>
     [HttpGet]
+    [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)] // 1 minute
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<UserSummaryDto>>> GetActiveUsers(
         [FromQuery] int pageNumber = 1,
