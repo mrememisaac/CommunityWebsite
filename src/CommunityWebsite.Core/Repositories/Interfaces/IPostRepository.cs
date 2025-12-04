@@ -13,5 +13,6 @@ public interface IPostRepository : IRepository<Post>
     Task<Post?> GetPostWithCommentsAsync(int postId);
     Task<IEnumerable<Post>> GetTrendingPostsAsync(int days = 7, int limit = 10);
     Task<IEnumerable<Post>> SearchPostsAsync(string searchTerm);
+    Task<int> GetPostCountAsync(int userId);
     Task IncrementViewCountAsync(int postId);
 }
