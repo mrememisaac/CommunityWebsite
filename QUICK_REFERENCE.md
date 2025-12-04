@@ -2,6 +2,14 @@
 
 ## ✅ What Was Implemented
 
+### 🆕 **User Profile Viewing & Content Discovery**
+
+- **User Profile Page**: `/users/{id}` - Public user profiles with member info, roles, and recent posts
+- **MyPosts Page**: `/Posts/MyPosts` - Logged-in users view only their posts with search & sort
+- **API Endpoint**: `GET /api/posts/user/{userId}` - Retrieve user's posts programmatically
+- **Profile Links**: Author names and avatars throughout app link to user profiles
+- **Status**: ✅ Fully implemented with clickable profile links in posts, events, and comments
+
 ### 1️⃣ **Integration Tests**
 
 - File: `AuthenticationServiceIntegrationTests.cs`
