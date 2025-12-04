@@ -25,51 +25,32 @@
                     <form id="createEventForm">
                         <div class="mb-4">
                             <label for="title" class="form-label">Event Title <span class="text-danger">*</span></label>
-                            <input type="text" 
-                                   class="form-control form-control-lg" 
-                                   id="title" 
-                                   name="Title"
-                                   placeholder="Enter a title for your event"
-                                   maxlength="200"
-                                   required>
+                            <input type="text" class="form-control form-control-lg" id="title" name="Title"
+                                placeholder="Enter a title for your event" maxlength="200" required>
                         </div>
 
                         <div class="row mb-4">
                             <div class="col-md-6 mb-3 mb-md-0">
                                 <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
-                                <input type="date" 
-                                       class="form-control" 
-                                       id="date" 
-                                       name="Date"
-                                       required>
+                                <input type="date" class="form-control" id="date" name="Date" required>
                             </div>
                             <div class="col-md-6">
                                 <label for="time" class="form-label">Time <span class="text-danger">*</span></label>
-                                <input type="time" 
-                                       class="form-control" 
-                                       id="time" 
-                                       name="Time"
-                                       required>
+                                <input type="time" class="form-control" id="time" name="Time" required>
                             </div>
                         </div>
 
                         <div class="mb-4">
                             <label for="location" class="form-label">Location</label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="location" 
-                                   name="Location"
-                                   placeholder="Where will this event take place?">
+                            <input type="text" class="form-control" id="location" name="Location"
+                                placeholder="Where will this event take place?">
                             <div class="form-text">Physical address, online meeting link, or "TBD"</div>
                         </div>
 
                         <div class="mb-4">
                             <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" 
-                                      id="description" 
-                                      name="Description"
-                                      rows="6" 
-                                      placeholder="Describe your event - what will happen, what should attendees expect, what to bring, etc."></textarea>
+                            <textarea class="form-control" id="description" name="Description" rows="6"
+                                placeholder="Describe your event - what will happen, what should attendees expect, what to bring, etc."></textarea>
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center">
@@ -96,7 +77,8 @@
                         <li class="mb-3">
                             <i class="bi bi-check-circle text-success me-2"></i>
                             <strong>Choose a Clear Title</strong>
-                            <p class="text-muted small mb-0">Make it easy for members to understand what the event is about</p>
+                            <p class="text-muted small mb-0">Make it easy for members to understand what the event is
+                                about</p>
                         </li>
                         <li class="mb-3">
                             <i class="bi bi-check-circle text-success me-2"></i>
@@ -122,7 +104,11 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
+        function isAuthenticated() {
+            return @User.Identity.IsAuthenticated.ToString().ToLower();
+        }
+
+        $(document).ready(function () {
             // Check authentication
             if (!isAuthenticated()) {
                 window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
@@ -134,9 +120,9 @@
             $('#date').attr('min', today);
 
             // Form submission
-            $('#createEventForm').submit(function(e) {
+            $('#createEventForm').submit(function (e) {
                 e.preventDefault();
-                
+
                 const title = $('#title').val().trim();
                 const date = $('#date').val();
                 const time = $('#time').val();
@@ -167,7 +153,7 @@
                     date: eventDateTime.toISOString(),
                     location: location || null,
                     description: description || null
-                }).then(function(result) {
+                }).then(function (result) {
                     if (result.isSuccess && result.data) {
                         showToast('Event created successfully!', 'success');
                         window.location.href = '/Events/Details/' + result.data.id;
@@ -175,7 +161,7 @@
                         showToast(result.errors?.join(', ') || 'Failed to create event', 'danger');
                         $('#submitBtn').prop('disabled', false).html('<i class="bi bi-calendar-plus me-2"></i>Create Event');
                     }
-                }).catch(function() {
+                }).catch(function () {
                     showToast('Failed to create event. Please try again.', 'danger');
                     $('#submitBtn').prop('disabled', false).html('<i class="bi bi-calendar-plus me-2"></i>Create Event');
                 });

@@ -27,55 +27,36 @@
                     {
                         <form id="editEventForm">
                             <input type="hidden" id="eventId" value="@Model.Id">
-                            
+
                             <div class="mb-4">
                                 <label for="title" class="form-label">Event Title <span class="text-danger">*</span></label>
-                                <input type="text" 
-                                       class="form-control form-control-lg" 
-                                       id="title" 
-                                       name="Title"
-                                       value="@Model.Title"
-                                       maxlength="200"
-                                       required>
+                                <input type="text" class="form-control form-control-lg" id="title" name="Title"
+                                    value="@Model.Title" maxlength="200" required>
                             </div>
 
                             <div class="row mb-4">
                                 <div class="col-md-6 mb-3 mb-md-0">
                                     <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
-                                    <input type="date" 
-                                           class="form-control" 
-                                           id="date" 
-                                           name="Date"
-                                           value="@Model.Date.ToString("yyyy-MM-dd")"
-                                           required>
+                                    <input type="date" class="form-control" id="date" name="Date"
+                                        value="@Model.Date.ToString("yyyy-MM-dd")" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="time" class="form-label">Time <span class="text-danger">*</span></label>
-                                    <input type="time" 
-                                           class="form-control" 
-                                           id="time" 
-                                           name="Time"
-                                           value="@Model.Date.ToString("HH:mm")"
-                                           required>
+                                    <input type="time" class="form-control" id="time" name="Time"
+                                        value="@Model.Date.ToString("HH:mm")" required>
                                 </div>
                             </div>
 
                             <div class="mb-4">
                                 <label for="location" class="form-label">Location</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="location" 
-                                       name="Location"
-                                       value="@Model.Location"
-                                       placeholder="Where will this event take place?">
+                                <input type="text" class="form-control" id="location" name="Location"
+                                    value="@Model.Location" placeholder="Where will this event take place?">
                             </div>
 
                             <div class="mb-4">
                                 <label for="description" class="form-label">Description</label>
-                                <textarea class="form-control" 
-                                          id="description" 
-                                          name="Description"
-                                          rows="6">@Model.Description</textarea>
+                                <textarea class="form-control" id="description" name="Description"
+                                rows="6">@Model.Description</textarea>
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center">
@@ -134,7 +115,11 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
+        function isAuthenticated() {
+            return @User.Identity.IsAuthenticated.ToString().ToLower();
+        }
+
+        $(document).ready(function () {
             const eventId = $('#eventId').val();
             const deleteModal = new bootstrap.Modal('#deleteModal');
 
@@ -145,9 +130,9 @@
             }
 
             // Form submission
-            $('#editEventForm').submit(function(e) {
+            $('#editEventForm').submit(function (e) {
                 e.preventDefault();
-                
+
                 const title = $('#title').val().trim();
                 const date = $('#date').val();
                 const time = $('#time').val();
@@ -174,7 +159,7 @@
                     date: eventDateTime.toISOString(),
                     location: location || null,
                     description: description || null
-                }).then(function(result) {
+                }).then(function (result) {
                     if (result.isSuccess) {
                         showToast('Event updated successfully!', 'success');
                         window.location.href = '/Events/Details/' + eventId;
@@ -182,23 +167,23 @@
                         showToast(result.errors?.join(', ') || 'Failed to update event', 'danger');
                         $('#submitBtn').prop('disabled', false).html('<i class="bi bi-check-lg me-2"></i>Save Changes');
                     }
-                }).catch(function() {
+                }).catch(function () {
                     showToast('Failed to update event. Please try again.', 'danger');
                     $('#submitBtn').prop('disabled', false).html('<i class="bi bi-check-lg me-2"></i>Save Changes');
                 });
             });
 
             // Delete button
-            $('#deleteBtn').click(function() {
+            $('#deleteBtn').click(function () {
                 deleteModal.show();
             });
 
             // Confirm delete
-            $('#confirmDelete').click(function() {
+            $('#confirmDelete').click(function () {
                 $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Deleting...');
 
                 apiRequest(`/api/events/${eventId}`, 'DELETE')
-                    .then(function(result) {
+                    .then(function (result) {
                         if (result.isSuccess) {
                             showToast('Event deleted successfully', 'success');
                             window.location.href = '/Events';
