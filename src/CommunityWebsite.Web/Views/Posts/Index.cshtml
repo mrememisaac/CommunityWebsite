@@ -132,6 +132,10 @@
 
 @section Scripts {
     <script>
+        // Define isAuthenticated from Razor
+        function isAuthenticated() {
+            return @User.Identity.IsAuthenticated.ToString().ToLower();
+        }
         $(document).ready(function () {
             // Check if user is authenticated for create button
             if (!isAuthenticated()) {

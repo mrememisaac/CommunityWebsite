@@ -1,3 +1,4 @@
+@model CommunityWebsite.Core.DTOs.Requests.RegisterRequest
 @{
     ViewData["Title"] = "Register";
     Layout = "_Layout";
@@ -13,89 +14,76 @@
                         <p class="text-muted">Join the Captain of Industry community</p>
                     </div>
 
-                    <form id="registerForm">
+                    @using (Html.BeginForm("Register", "Auth", FormMethod.Post, new
+                    {
+                        @class = "needs-validation",
+                        novalidate = "novalidate",
+                        id = "registerForm"
+                    }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+                        <div id="successMessage" class="alert alert-success d-none" role="alert"></div>
                         <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
+                            <label asp-for="Username" class="form-label"></label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="username" 
-                                       placeholder="Choose a username"
-                                       minlength="3"
-                                       maxlength="50"
-                                       required>
+                                <input asp-for="Username" class="form-control" placeholder="Choose a username" />
                             </div>
+                            <span asp-validation-for="Username" class="text-danger"></span>
                             <div class="form-text">3-50 characters, letters, numbers, and underscores only</div>
                         </div>
-
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email Address</label>
+                            <label asp-for="Email" class="form-label"></label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                <input type="email" 
-                                       class="form-control" 
-                                       id="email" 
-                                       placeholder="you@example.com"
-                                       required>
+                                <input asp-for="Email" class="form-control" placeholder="you@example.com" />
                             </div>
+                            <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
-
                         <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
+                            <label asp-for="Password" class="form-label"></label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="password" 
-                                       placeholder="Create a password"
-                                       minlength="8"
-                                       required>
+                                <input asp-for="Password" class="form-control" placeholder="Create a password" />
                                 <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                     <i class="bi bi-eye" id="toggleIcon"></i>
                                 </button>
                             </div>
+                            <span asp-validation-for="Password" class="text-danger"></span>
                             <div class="form-text">At least 8 characters</div>
                         </div>
-
                         <div class="mb-4">
-                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="confirmPassword" 
-                                       placeholder="Confirm your password"
-                                       required>
+                                <input asp-for="ConfirmPassword" class="form-control" placeholder="Confirm your password" />
                             </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
                         </div>
-
                         <div class="mb-4">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="agreeTerms" required>
-                                <label class="form-check-label" for="agreeTerms">
-                                    I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms of Service</a> and <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>
+                                <input asp-for="AgreeTerms" class="form-check-input" />
+                                <label class="form-check-label" asp-for="AgreeTerms">
+                                    I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms of
+                                        Service</a> and <a href="#" data-bs-toggle="modal"
+                                        data-bs-target="#privacyModal">Privacy Policy</a>
                                 </label>
                             </div>
+                            <span asp-validation-for="AgreeTerms" class="text-danger"></span>
                         </div>
-
-                        <div id="errorMessage" class="alert alert-danger d-none" role="alert"></div>
-                        <div id="successMessage" class="alert alert-success d-none" role="alert"></div>
-
                         <button type="submit" class="btn btn-primary w-100 mb-3" id="submitBtn">
                             <i class="bi bi-person-plus me-2"></i>Create Account
                         </button>
-                    </form>
+                    }
 
                     <hr class="my-4">
-
                     <p class="text-center mb-0">
-                        Already have an account? 
+                        Already have an account?
                         <a asp-action="Login" class="fw-bold">Sign in</a>
                     </p>
                 </div>
             </div>
-
             <div class="text-center mt-3">
                 <a asp-controller="Home" asp-action="Index" class="text-muted">
                     <i class="bi bi-arrow-left me-1"></i>Back to Home
@@ -115,14 +103,16 @@
             </div>
             <div class="modal-body">
                 <h6>1. Acceptance of Terms</h6>
-                <p>By accessing and using the Captain of Industry community website, you agree to be bound by these Terms of Service.</p>
-                
+                <p>By accessing and using the Captain of Industry community website, you agree to be bound by these
+                    Terms of Service.</p>
+
                 <h6>2. Community Guidelines</h6>
-                <p>Users must treat each other with respect. Harassment, hate speech, and inappropriate content are prohibited.</p>
-                
+                <p>Users must treat each other with respect. Harassment, hate speech, and inappropriate content are
+                    prohibited.</p>
+
                 <h6>3. Content Ownership</h6>
                 <p>Users retain ownership of content they post but grant the community a license to display it.</p>
-                
+
                 <h6>4. Account Responsibility</h6>
                 <p>You are responsible for maintaining the security of your account credentials.</p>
             </div>
@@ -143,14 +133,16 @@
             </div>
             <div class="modal-body">
                 <h6>Information We Collect</h6>
-                <p>We collect information you provide when registering, such as username, email, and password (encrypted).</p>
-                
+                <p>We collect information you provide when registering, such as username, email, and password
+                    (encrypted).</p>
+
                 <h6>How We Use Information</h6>
-                <p>Your information is used to provide and improve the community service, authenticate your identity, and communicate with you.</p>
-                
+                <p>Your information is used to provide and improve the community service, authenticate your identity,
+                    and communicate with you.</p>
+
                 <h6>Data Security</h6>
                 <p>We implement appropriate security measures to protect your personal information.</p>
-                
+
                 <h6>Your Rights</h6>
                 <p>You can request to view, update, or delete your personal information at any time.</p>
             </div>
@@ -163,117 +155,54 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            // Check if already logged in
-            if (isAuthenticated()) {
-                window.location.href = '/';
-            }
-
-            // Toggle password visibility
-            $('#togglePassword').click(function() {
-                const passwordInput = $('#password');
-                const toggleIcon = $('#toggleIcon');
-                
-                if (passwordInput.attr('type') === 'password') {
-                    passwordInput.attr('type', 'text');
-                    toggleIcon.removeClass('bi-eye').addClass('bi-eye-slash');
-                } else {
-                    passwordInput.attr('type', 'password');
-                    toggleIcon.removeClass('bi-eye-slash').addClass('bi-eye');
-                }
-            });
-
-            // Form submission
-            $('#registerForm').submit(function(e) {
+        $(function () {
+            $('#registerForm').on('submit', function (e) {
                 e.preventDefault();
-                
-                const username = $('#username').val().trim();
-                const email = $('#email').val().trim();
-                const password = $('#password').val();
-                const confirmPassword = $('#confirmPassword').val();
-
-                // Validation
-                if (!username || !email || !password) {
-                    showError('Please fill in all fields');
-                    return;
-                }
-
-                if (username.length < 3) {
-                    showError('Username must be at least 3 characters');
-                    return;
-                }
-
-                if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-                    showError('Username can only contain letters, numbers, and underscores');
-                    return;
-                }
-
-                if (password.length < 8) {
-                    showError('Password must be at least 8 characters');
-                    return;
-                }
-
-                if (password !== confirmPassword) {
-                    showError('Passwords do not match');
-                    return;
-                }
-
-                if (!$('#agreeTerms').is(':checked')) {
-                    showError('Please agree to the Terms of Service and Privacy Policy');
-                    return;
-                }
-
-                $('#submitBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Creating account...');
-                hideError();
-
+                $('.text-danger').text('');
+                var data = {
+                    username: $('#Username').val(),
+                    email: $('#Email').val(),
+                    password: $('#Password').val(),
+                    confirmPassword: $('#ConfirmPassword').val(),
+                    agreeTerms: $('#AgreeTerms').is(':checked')
+                };
                 $.ajax({
-                    url: '/api/auth/register',
-                    method: 'POST',
+                    url: '/api/Auth/register',
+                    type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({
-                        username: username,
-                        email: email,
-                        password: password
-                    }),
-                    success: function(result) {
-                        if (result.isSuccess) {
-                            showSuccess('Account created successfully! Redirecting to login...');
-                            setTimeout(function() {
-                                window.location.href = '/Account/Login';
-                            }, 2000);
-                        } else {
-                            showError(result.errors?.join(', ') || 'Registration failed');
-                            resetButton();
-                        }
+                    data: JSON.stringify(data),
+                    headers: {
+                        'RequestVerificationToken': $('input[name=__RequestVerificationToken]').val() || ''
                     },
-                    error: function(xhr) {
-                        let message = 'Registration failed. Please try again.';
-                        if (xhr.responseJSON && xhr.responseJSON.errors) {
-                            message = xhr.responseJSON.errors.join(', ');
+                    success: function () {
+                        $('#successMessage')
+                            .removeClass('d-none')
+                            .text('Registration successful! Redirecting to login...');
+                        setTimeout(function () {
+                            window.location.href = '/Account/Login';
+                        }, 2000);
+                    },
+                    error: function (xhr) {
+                        var result = xhr.responseJSON;
+                        if (result && result.errors) {
+                            if (Array.isArray(result.errors)) {
+                                alert(result.errors.join('\n'));
+                            } else {
+                                $.each(result.errors, function (key, value) {
+                                    if (typeof key === 'string') {
+                                        var errorSpan = $('[data-valmsg-for="' + key.charAt(0).toUpperCase() + key.slice(1) + '"]');
+                                        if (errorSpan.length) errorSpan.text(value);
+                                    }
+                                });
+                            }
+                        } else if (result && result.error) {
+                            alert(result.error);
+                        } else {
+                            alert('Registration failed.');
                         }
-                        showError(message);
-                        resetButton();
                     }
                 });
             });
-
-            function showError(message) {
-                $('#errorMessage').text(message).removeClass('d-none');
-                $('#successMessage').addClass('d-none');
-            }
-
-            function showSuccess(message) {
-                $('#successMessage').text(message).removeClass('d-none');
-                $('#errorMessage').addClass('d-none');
-            }
-
-            function hideError() {
-                $('#errorMessage').addClass('d-none');
-            }
-
-            function resetButton() {
-                $('#submitBtn').prop('disabled', false).html('<i class="bi bi-person-plus me-2"></i>Create Account');
-            }
         });
     </script>
 }
