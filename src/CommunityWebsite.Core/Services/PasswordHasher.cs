@@ -97,12 +97,6 @@ public class PasswordHasher : IPasswordHasher
         if (a.Length != b.Length)
             return false;
 
-        int result = 0;
-        for (int i = 0; i < a.Length; i++)
-        {
-            result |= a[i] ^ b[i];
-        }
-
-        return result == 0;
+        return CryptographicOperations.FixedTimeEquals(a, b);
     }
 }
