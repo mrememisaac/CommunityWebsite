@@ -11,6 +11,7 @@ This community website platform demonstrates:
 - **Frontend**: Responsive Bootstrap 5 UI with modern design
 - **Testing**: Comprehensive unit tests with xUnit, Moq, and FluentAssertions
 - **Performance**: Optimized EF Core queries with indexes and proper pagination
+- **User Management**: Complete user profiles, post history, and user-specific content views
 
 ## 📦 Tech Stack
 
