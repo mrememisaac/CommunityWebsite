@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using CommunityWebsite.Core.Constants;
 using CommunityWebsite.Core.Data;
 using CommunityWebsite.Core.Models;
 using CommunityWebsite.Core.Repositories.Interfaces;
@@ -37,9 +38,10 @@ public class UserRepository : GenericRepository<User>, IUserRepository
 
     public async Task<IEnumerable<User>> GetUsersByRoleAsync(string roleName)
     {
+        var normalizedRole = roleName.ToLower();
         return await _dbSet
             .Where(u => u.IsActive &&
-                   u.UserRoles.Any(ur => ur.Role.Name == roleName))
+                   u.UserRoles.Any(ur => ur.Role.Name.ToLower() == normalizedRole))
             .Include(u => u.UserRoles)
             .ThenInclude(ur => ur.Role)
             .AsNoTracking()
@@ -51,13 +53,17 @@ public class UserRepository : GenericRepository<User>, IUserRepository
         return await _dbSet.AnyAsync(u => u.Email == email && u.IsActive);
     }
 
-    public async Task<IEnumerable<User>> GetActiveUsersAsync(int pageNumber = 1, int pageSize = 20)
+    public async Task<IEnumerable<User>> GetActiveUsersAsync(int pageNumber = 1, int pageSize = 0)
     {
+        if (pageSize <= 0)
+            pageSize = PaginationDefaults.DefaultPageSize;
+
         var skip = (pageNumber - 1) * pageSize;
 
         return await _dbSet
             .Where(u => u.IsActive)
-            .OrderBy(u => u.Username)
+            .OrderByDescending(u => u.CreatedAt)
+            .ThenBy(u => u.Username)
             .Skip(skip)
             .Take(pageSize)
             .AsNoTracking()
