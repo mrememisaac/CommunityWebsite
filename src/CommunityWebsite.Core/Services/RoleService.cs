@@ -4,6 +4,7 @@ using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Models;
 using CommunityWebsite.Core.Repositories.Interfaces;
 using CommunityWebsite.Core.Services.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace CommunityWebsite.Core.Services;
@@ -15,21 +16,37 @@ namespace CommunityWebsite.Core.Services;
 public class RoleService : IRoleService
 {
     private readonly IRoleRepository _roleRepository;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<RoleService> _logger;
+
+    // Cache keys
+    private const string AllRolesCacheKey = "all_roles";
+    private const string RoleByNameCacheKeyPrefix = "role_name_";
+    private const string RoleByIdCacheKeyPrefix = "role_id_";
 
     // System roles that cannot be modified or deleted
     private static readonly string[] ProtectedRoles = { "Admin", "User", "Moderator" };
 
+    // Cache expiration settings
+    private static readonly MemoryCacheEntryOptions RoleCacheOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
+        SlidingExpiration = TimeSpan.FromMinutes(30),
+        Size = 1
+    };
+
     public RoleService(
         IRoleRepository roleRepository,
+        IMemoryCache cache,
         ILogger<RoleService> logger)
     {
         _roleRepository = roleRepository ?? throw new ArgumentNullException(nameof(roleRepository));
+        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
-    /// Gets a role by ID
+    /// Gets a role by ID with caching
     /// </summary>
     public async Task<Result<RoleDto>> GetRoleByIdAsync(int roleId)
     {
@@ -42,6 +59,15 @@ public class RoleService : IRoleService
                 return Result<RoleDto>.Failure("Invalid role ID");
             }
 
+            var cacheKey = $"{RoleByIdCacheKeyPrefix}{roleId}";
+
+            // Try to get from cache
+            if (_cache.TryGetValue(cacheKey, out RoleDto? cachedRole))
+            {
+                _logger.LogDebug("Role {RoleId} retrieved from cache", roleId);
+                return Result<RoleDto>.Success(cachedRole!);
+            }
+
             var role = await _roleRepository.GetByIdAsync(roleId);
             if (role == null)
             {
@@ -49,6 +75,11 @@ public class RoleService : IRoleService
             }
 
             var dto = MapToDto(role);
+
+            // Cache the result
+            _cache.Set(cacheKey, dto, RoleCacheOptions);
+            _logger.LogDebug("Role {RoleId} cached", roleId);
+
             return Result<RoleDto>.Success(dto);
         }
         catch (Exception ex)
@@ -59,7 +90,7 @@ public class RoleService : IRoleService
     }
 
     /// <summary>
-    /// Gets a role by name
+    /// Gets a role by name with caching
     /// </summary>
     public async Task<Result<RoleDto>> GetRoleByNameAsync(string name)
     {
@@ -72,6 +103,15 @@ public class RoleService : IRoleService
                 return Result<RoleDto>.Failure("Role name is required");
             }
 
+            var cacheKey = $"{RoleByNameCacheKeyPrefix}{name.ToLower()}";
+
+            // Try to get from cache
+            if (_cache.TryGetValue(cacheKey, out RoleDto? cachedRole))
+            {
+                _logger.LogDebug("Role {RoleName} retrieved from cache", name);
+                return Result<RoleDto>.Success(cachedRole!);
+            }
+
             var role = await _roleRepository.GetRoleByNameAsync(name);
             if (role == null)
             {
@@ -79,6 +119,11 @@ public class RoleService : IRoleService
             }
 
             var dto = MapToDto(role);
+
+            // Cache the result
+            _cache.Set(cacheKey, dto, RoleCacheOptions);
+            _logger.LogDebug("Role {RoleName} cached", name);
+
             return Result<RoleDto>.Success(dto);
         }
         catch (Exception ex)
@@ -89,13 +134,20 @@ public class RoleService : IRoleService
     }
 
     /// <summary>
-    /// Gets all roles with user counts
+    /// Gets all roles with user counts and caching
     /// </summary>
     public async Task<Result<IEnumerable<RoleDto>>> GetAllRolesAsync()
     {
         try
         {
             _logger.LogInformation("Retrieving all roles");
+
+            // Try to get from cache
+            if (_cache.TryGetValue(AllRolesCacheKey, out IEnumerable<RoleDto>? cachedRoles))
+            {
+                _logger.LogDebug("All roles retrieved from cache");
+                return Result<IEnumerable<RoleDto>>.Success(cachedRoles!);
+            }
 
             var roles = await _roleRepository.GetAllRolesWithUsersAsync();
 
@@ -105,7 +157,11 @@ public class RoleService : IRoleService
                 Name = r.Name,
                 Description = r.Description,
                 UserCount = r.UserRoles.Count
-            });
+            }).ToList();
+
+            // Cache the result
+            _cache.Set(AllRolesCacheKey, (IEnumerable<RoleDto>)dtos, RoleCacheOptions);
+            _logger.LogDebug("All roles cached");
 
             return Result<IEnumerable<RoleDto>>.Success(dtos);
         }
@@ -151,6 +207,10 @@ public class RoleService : IRoleService
 
             await _roleRepository.AddAsync(role);
             await _roleRepository.SaveChangesAsync();
+
+            // Invalidate cache
+            _cache.Remove(AllRolesCacheKey);
+            _logger.LogDebug("Cache invalidated: {CacheKey}", AllRolesCacheKey);
 
             _logger.LogInformation("Role {RoleName} created with ID {RoleId}", role.Name, role.Id);
 
@@ -219,6 +279,12 @@ public class RoleService : IRoleService
             await _roleRepository.UpdateAsync(role);
             await _roleRepository.SaveChangesAsync();
 
+            // Invalidate cache
+            _cache.Remove(AllRolesCacheKey);
+            _cache.Remove($"{RoleByIdCacheKeyPrefix}{roleId}");
+            _cache.Remove($"{RoleByNameCacheKeyPrefix}{role.Name.ToLower()}");
+            _logger.LogDebug("Cache invalidated for role {RoleId}", roleId);
+
             _logger.LogInformation("Role {RoleId} updated successfully", roleId);
 
             var dto = MapToDto(role);
@@ -266,6 +332,12 @@ public class RoleService : IRoleService
 
             await _roleRepository.DeleteAsync(roleId);
             await _roleRepository.SaveChangesAsync();
+
+            // Invalidate cache
+            _cache.Remove(AllRolesCacheKey);
+            _cache.Remove($"{RoleByIdCacheKeyPrefix}{roleId}");
+            _cache.Remove($"{RoleByNameCacheKeyPrefix}{role.Name.ToLower()}");
+            _logger.LogDebug("Cache invalidated for deleted role {RoleId}", roleId);
 
             _logger.LogInformation("Role {RoleId} deleted successfully", roleId);
 

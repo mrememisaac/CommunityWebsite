@@ -8,6 +8,7 @@ using CommunityWebsite.Core.Models;
 using CommunityWebsite.Core.Repositories.Interfaces;
 using CommunityWebsite.Core.Services;
 using CommunityWebsite.Core.Services.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace CommunityWebsite.Tests.Services;
@@ -18,16 +19,19 @@ namespace CommunityWebsite.Tests.Services;
 public class RoleServiceTests
 {
     private readonly Mock<IRoleRepository> _mockRoleRepository;
+    private readonly Mock<IMemoryCache> _mockMemoryCache;
     private readonly Mock<ILogger<RoleService>> _mockLogger;
     private readonly RoleService _roleService;
 
     public RoleServiceTests()
     {
         _mockRoleRepository = new Mock<IRoleRepository>();
+        _mockMemoryCache = new Mock<IMemoryCache>();
         _mockLogger = new Mock<ILogger<RoleService>>();
 
         _roleService = new RoleService(
             _mockRoleRepository.Object,
+            _mockMemoryCache.Object,
             _mockLogger.Object);
     }
 
@@ -37,17 +41,27 @@ public class RoleServiceTests
     public void Constructor_WithNullRoleRepository_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var action = () => new RoleService(null!, _mockLogger.Object);
+        var action = () => new RoleService(null!, _mockMemoryCache.Object, _mockLogger.Object);
 
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("roleRepository");
     }
 
     [Fact]
+    public void Constructor_WithNullMemoryCache_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        var action = () => new RoleService(_mockRoleRepository.Object, null!, _mockLogger.Object);
+
+        action.Should().Throw<ArgumentNullException>()
+            .WithParameterName("cache");
+    }
+
+    [Fact]
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var action = () => new RoleService(_mockRoleRepository.Object, null!);
+        var action = () => new RoleService(_mockRoleRepository.Object, _mockMemoryCache.Object, null!);
 
         action.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
