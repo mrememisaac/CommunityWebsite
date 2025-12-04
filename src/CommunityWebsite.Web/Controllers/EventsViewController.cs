@@ -58,15 +58,15 @@ public class EventsViewController : ViewControllerBase
         // Apply sorting
         eventList = sortBy switch
         {
-            "date-desc" => eventList.OrderByDescending(e => e.Date).ToList(),
-            "title" => eventList.OrderBy(e => e.Title).ToList(),
-            _ => eventList.OrderBy(e => e.Date).ToList() // date-asc
+            "date-desc" => [.. eventList.OrderByDescending(e => e.Date)],
+            "title" => [.. eventList.OrderBy(e => e.Title)],
+            _ => [.. eventList.OrderBy(e => e.Date)] // date-asc
         };
 
         // Pagination
         const int pageSize = 9;
         var totalPages = (int)Math.Ceiling(eventList.Count / (double)pageSize);
-        eventList = eventList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        eventList = [.. eventList.Skip((page - 1) * pageSize).Take(pageSize)];
 
         ViewBag.Search = search;
         ViewBag.Period = period;

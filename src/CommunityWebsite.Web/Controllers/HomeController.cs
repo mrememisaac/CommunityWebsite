@@ -34,8 +34,8 @@ public class HomeController : ViewControllerBase
             var postsResult = await _postService.GetFeaturedPostsAsync();
             var eventsResult = await _eventService.GetUpcomingEventsAsync(4);
 
-            ViewBag.RecentPosts = postsResult.IsSuccess ? postsResult.Data?.Take(6) : new List<Core.DTOs.Responses.PostSummaryDto>();
-            ViewBag.UpcomingEvents = eventsResult.IsSuccess ? eventsResult.Data : new List<Core.DTOs.Responses.EventDto>();
+            ViewBag.RecentPosts = postsResult.IsSuccess ? postsResult.Data?.Take(6) : [];
+            ViewBag.UpcomingEvents = eventsResult.IsSuccess ? eventsResult.Data : [];
         }
         catch (Exception ex)
         {
