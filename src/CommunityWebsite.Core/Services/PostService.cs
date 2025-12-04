@@ -331,4 +331,36 @@ public class PostService : IPostService
             return Result<bool>.Failure("An error occurred while verifying ownership.");
         }
     }
+
+    /// <summary>
+    /// Gets all posts created by a specific user
+    /// </summary>
+    public async Task<Result<IEnumerable<PostSummaryDto>>> GetPostsByUserAsync(int userId)
+    {
+        try
+        {
+            var posts = await _postRepository.FindAsync(p => p.AuthorId == userId && !p.IsDeleted);
+
+            var result = posts
+                .OrderByDescending(p => p.CreatedAt)
+                .Select(p => new PostSummaryDto
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Preview = TruncateContent(p.Content, 150),
+                    Author = new UserSummaryDto { Id = p.Author?.Id ?? 0, Username = p.Author?.Username ?? "Unknown" },
+                    Category = p.Category,
+                    CreatedAt = p.CreatedAt,
+                    ViewCount = p.ViewCount,
+                    CommentCount = p.Comments?.Count(c => !c.IsDeleted) ?? 0
+                }).ToList();
+
+            return Result<IEnumerable<PostSummaryDto>>.Success(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving posts for user {UserId}", userId);
+            return Result<IEnumerable<PostSummaryDto>>.Failure("An error occurred while retrieving posts.");
+        }
+    }
 }
