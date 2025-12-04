@@ -75,6 +75,10 @@
 
 @section Scripts {
     <script>
+        function isAuthenticated() {
+            return @User.Identity.IsAuthenticated.ToString().ToLower();
+        }
+
         $(document).ready(function() {
             // Check if already logged in
             if (isAuthenticated()) {
@@ -112,7 +116,7 @@
                 hideError();
 
                 $.ajax({
-                    url: '/api/auth/login',
+                    url: '/api/Auth/login',
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
@@ -120,18 +124,15 @@
                         password: password
                     }),
                     success: function(result) {
-                        if (result.isSuccess && result.data) {
-                            // Store authentication data
-                            setAuthToken(result.data.token);
-                            localStorage.setItem('userId', result.data.userId);
-                            localStorage.setItem('username', result.data.username);
-                            localStorage.setItem('email', result.data.email);
-                            
-                            if (result.data.roles) {
-                                localStorage.setItem('roles', JSON.stringify(result.data.roles));
-                            }
-
-                            showToast('Login successful!', 'success');
+                        if (result) {
+                            // Store authentication data using the global function
+                            const userData = {
+                                userId: result.userId,
+                                username: result.username,
+                                email: result.email,
+                                roles: result.roles || []
+                            };
+                            saveAuthData(result.token, userData);
 
                             // Redirect to return URL or home
                             const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
@@ -139,16 +140,16 @@
                                 window.location.href = returnUrl || '/';
                             }, 500);
                         } else {
-                            showError(result.errors?.join(', ') || 'Invalid email or password');
+                            showError('Invalid email or password');
                             resetButton();
                         }
                     },
                     error: function(xhr) {
                         let message = 'Login failed. Please try again.';
-                        if (xhr.responseJSON && xhr.responseJSON.errors) {
-                            message = xhr.responseJSON.errors.join(', ');
-                        } else if (xhr.status === 401) {
+                        if (xhr.status === 401) {
                             message = 'Invalid email or password';
+                        } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                            message = xhr.responseJSON.error;
                         }
                         showError(message);
                         resetButton();
