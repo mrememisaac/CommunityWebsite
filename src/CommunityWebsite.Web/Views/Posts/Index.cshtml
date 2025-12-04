@@ -78,11 +78,17 @@
                             </p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center">
-                                    <div
-                                        class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                        @(post.AuthorUsername?.Substring(0, 1).ToUpper() ?? "?")
-                                    </div>
-                                    <span class="text-muted">@post.AuthorUsername</span>
+                                    <a href="@Url.Action("Profile", "Users", new { id = post.AuthorId })"
+                                        class="text-decoration-none">
+                                        <div
+                                            class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            @(post.AuthorUsername?.Substring(0, 1).ToUpper() ?? "?")
+                                        </div>
+                                    </a>
+                                    <a href="@Url.Action("Profile", "Users", new { id = post.AuthorId })"
+                                        class="text-decoration-none text-muted">
+                                        <span class="text-muted">@post.AuthorUsername</span>
+                                    </a>
                                 </div>
                                 <div>
                                     <span class="badge bg-secondary me-2">
