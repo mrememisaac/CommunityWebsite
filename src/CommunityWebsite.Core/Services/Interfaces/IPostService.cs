@@ -13,6 +13,7 @@ public interface IPostService
     Task<Result<PostDetailDto?>> GetPostDetailAsync(int postId);
     Task<Result<IEnumerable<PostSummaryDto>>> GetFeaturedPostsAsync();
     Task<Result<IEnumerable<PostSummaryDto>>> GetPostsByCategoryAsync(string category, int pageNumber = 1);
+    Task<Result<IEnumerable<PostSummaryDto>>> GetPostsByUserAsync(int userId);
     Task<Result<PostDetailDto>> CreatePostAsync(CreatePostRequest request);
     Task<Result<PostDetailDto>> UpdatePostAsync(int postId, UpdatePostRequest request);
     Task<Result> DeletePostAsync(int postId);
