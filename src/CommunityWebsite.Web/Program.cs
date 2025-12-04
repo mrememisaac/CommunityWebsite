@@ -51,6 +51,7 @@ try
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<IRoleService, RoleService>();
     builder.Services.AddScoped<IEventService, EventService>();
+    builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 
     // Register authentication services
     var jwtSecret = builder.Configuration["Jwt:SecretKey"]
