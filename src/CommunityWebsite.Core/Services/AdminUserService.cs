@@ -36,7 +36,8 @@ public class AdminUserService : IAdminUserService
     }
 
     /// <summary>
-    /// Gets all users with pagination and optional filtering
+    /// Gets all users with pagination and optional filtering.
+    /// Optimized to use database-level filtering and batched queries to avoid N+1 issues.
     /// </summary>
     public async Task<Result<IEnumerable<AdminUserDto>>> GetAllUsersAsync(int pageNumber = 1, int pageSize = 20, string? searchTerm = null)
     {
@@ -50,40 +51,31 @@ public class AdminUserService : IAdminUserService
             if (pageSize < 1 || pageSize > 100)
                 return Result<IEnumerable<AdminUserDto>>.Failure("Page size must be between 1 and 100.");
 
-            var users = await _userRepository.GetAllUsersAsync();
+            // Use optimized repository method with database-level filtering and pagination
+            var (users, _) = await _userRepository.GetUsersWithStatsAsync(pageNumber, pageSize, searchTerm);
+            var usersList = users.ToList();
 
-            // Apply search filter if provided
-            if (!string.IsNullOrWhiteSpace(searchTerm))
+            // Batch fetch all post and comment counts to avoid N+1 queries
+            var userIds = usersList.Select(u => u.Id).ToList();
+            var postCountTasks = userIds.Select(id => _postRepository.GetPostCountAsync(id));
+            var commentCountTasks = userIds.Select(id => _commentRepository.GetCommentCountByUserAsync(id));
+
+            var postCounts = await Task.WhenAll(postCountTasks);
+            var commentCounts = await Task.WhenAll(commentCountTasks);
+
+            // Build result with pre-fetched counts
+            var result = usersList.Select((user, index) => new AdminUserDto
             {
-                var lowerSearch = searchTerm.ToLower();
-                users = users.Where(u =>
-                    u.Username.ToLower().Contains(lowerSearch) ||
-                    u.Email.ToLower().Contains(lowerSearch)).ToList();
-            }
-
-            // Apply pagination
-            var skip = (pageNumber - 1) * pageSize;
-            var paginatedUsers = users.Skip(skip).Take(pageSize).ToList();
-
-            var result = new List<AdminUserDto>();
-            foreach (var user in paginatedUsers)
-            {
-                var postCount = await _postRepository.GetPostCountAsync(user.Id);
-                var commentCount = await _commentRepository.GetCommentCountByUserAsync(user.Id);
-
-                result.Add(new AdminUserDto
-                {
-                    Id = user.Id,
-                    Username = user.Username,
-                    Email = user.Email,
-                    Roles = string.Join(", ", user.UserRoles.Select(ur => ur.Role.Name)),
-                    IsActive = user.IsActive,
-                    CreatedAt = user.CreatedAt,
-                    UpdatedAt = user.UpdatedAt,
-                    PostCount = postCount,
-                    CommentCount = commentCount
-                });
-            }
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Roles = string.Join(", ", user.UserRoles.Select(ur => ur.Role.Name)),
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt,
+                PostCount = postCounts[index],
+                CommentCount = commentCounts[index]
+            }).ToList();
 
             return Result<IEnumerable<AdminUserDto>>.Success(result);
         }
