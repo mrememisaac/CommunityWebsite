@@ -9,6 +9,7 @@ using CommunityWebsite.Core.Repositories.Interfaces;
 using CommunityWebsite.Core.Services;
 using CommunityWebsite.Core.Services.Interfaces;
 using CommunityWebsite.Core.Validators.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace CommunityWebsite.Tests.Services;
@@ -26,6 +27,7 @@ public class PostServiceTests
     private readonly Mock<IPostRepository> _mockPostRepository;
     private readonly Mock<IUserRepository> _mockUserRepository;
     private readonly Mock<IPostValidator> _mockPostValidator;
+    private readonly Mock<IMemoryCache> _mockMemoryCache;
     private readonly Mock<ILogger<PostService>> _mockLogger;
     private readonly PostService _postService;
 
@@ -34,12 +36,25 @@ public class PostServiceTests
         _mockPostRepository = new Mock<IPostRepository>();
         _mockUserRepository = new Mock<IUserRepository>();
         _mockPostValidator = new Mock<IPostValidator>();
+        _mockMemoryCache = new Mock<IMemoryCache>();
         _mockLogger = new Mock<ILogger<PostService>>();
+
+        // Configure mock cache - TryGetValue will always return false (cache miss)
+        // This forces all operations to hit the repository
+        _mockMemoryCache
+            .Setup(m => m.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny))
+            .Returns(false);
+
+        // Configure mock cache - Set should accept any calls
+        _mockMemoryCache
+            .Setup(m => m.CreateEntry(It.IsAny<object>()))
+            .Returns(new Mock<ICacheEntry>().Object);
 
         _postService = new PostService(
             _mockPostRepository.Object,
             _mockUserRepository.Object,
             _mockPostValidator.Object,
+            _mockMemoryCache.Object,
             _mockLogger.Object);
     }
 
