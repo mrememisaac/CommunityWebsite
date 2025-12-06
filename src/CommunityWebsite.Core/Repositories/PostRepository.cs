@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using CommunityWebsite.Core.Constants;
 using CommunityWebsite.Core.Data;
 using CommunityWebsite.Core.Models;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.Repositories.Interfaces;
 
 namespace CommunityWebsite.Core.Repositories;
@@ -19,15 +20,14 @@ public class PostRepository : GenericRepository<Post>, IPostRepository
     /// Gets active (non-deleted, non-locked) posts with pagination.
     /// Demonstrates: Filtering, Pagination, Query optimization
     /// </summary>
-    public async Task<IEnumerable<Post>> GetActivePostsAsync(int pageNumber = 1, int pageSize = 0)
+    public async Task<PagedResult<Post>> GetActivePostsAsync(int pageNumber = 1, int pageSize = 10)
     {
         if (pageSize <= 0)
             pageSize = PaginationDefaults.PostsPageSize;
-
         var skip = (pageNumber - 1) * pageSize;
-
-        return await _dbSet
-            .Where(p => !p.IsDeleted && !p.IsLocked)
+        var query = _dbSet.Where(p => !p.IsDeleted && !p.IsLocked);
+        var totalCount = await query.CountAsync();
+        var items = await query
             .OrderByDescending(p => p.IsPinned)
             .ThenByDescending(p => p.CreatedAt)
             .Skip(skip)
@@ -35,43 +35,67 @@ public class PostRepository : GenericRepository<Post>, IPostRepository
             .Include(p => p.Author)
             .AsNoTracking()
             .ToListAsync();
+        return new PagedResult<Post>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
     /// <summary>
     /// Gets posts by category with pagination.
     /// Demonstrates: String comparison, Pagination, Eager loading
     /// </summary>
-    public async Task<IEnumerable<Post>> GetPostsByCategoryAsync(string category, int pageSize = 0)
+    public async Task<PagedResult<Post>> GetPostsByCategoryAsync(string category, int pageNumber = 1, int pageSize = 20)
     {
         if (pageSize <= 0)
             pageSize = PaginationDefaults.DefaultPageSize;
-
-        return await _dbSet
+        var skip = (pageNumber - 1) * pageSize;
+        var query = _dbSet
             .Where(p => p.Category == category && !p.IsDeleted)
             .OrderByDescending(p => p.CreatedAt)
-            .Take(pageSize)
-            .Include(p => p.Author)
-            .AsNoTracking()
-            .ToListAsync();
+            .Include(p => p.Author);
+        var totalCount = await query.CountAsync();
+        var items = await query.Skip(skip).Take(pageSize).AsNoTracking().ToListAsync();
+        return new PagedResult<Post>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
     /// <summary>
     /// Gets all posts by a specific user.
     /// </summary>
-    public async Task<IEnumerable<Post>> GetUserPostsAsync(int userId, bool includeSoftDeleted = false)
+    public async Task<PagedResult<Post>> GetUserPostsAsync(int userId, int pageNumber = 1, int pageSize = 20, bool includeSoftDeleted = false)
     {
+        if (pageSize <= 0)
+            pageSize = PaginationDefaults.DefaultPageSize;
+        var skip = (pageNumber - 1) * pageSize;
         var query = _dbSet.Where(p => p.AuthorId == userId);
-
         if (!includeSoftDeleted)
         {
             query = query.Where(p => !p.IsDeleted);
         }
-
-        return await query
+        var totalCount = await query.CountAsync();
+        var items = await query
             .OrderByDescending(p => p.CreatedAt)
             .Include(p => p.Author)
+            .Skip(skip)
+            .Take(pageSize)
             .AsNoTracking()
             .ToListAsync();
+        return new PagedResult<Post>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
     /// <summary>
@@ -117,18 +141,31 @@ public class PostRepository : GenericRepository<Post>, IPostRepository
     /// Searches posts by title and content.
     /// Demonstrates: Full-text search patterns, Multiple conditions
     /// </summary>
-    public async Task<IEnumerable<Post>> SearchPostsAsync(string searchTerm)
+    public async Task<PagedResult<Post>> SearchPostsAsync(string searchTerm)
     {
+        int pageNumber = 1;
+        int pageSize = PaginationDefaults.DefaultPageSize;
+        var skip = (pageNumber - 1) * pageSize;
         var lowerSearchTerm = searchTerm.ToLower();
-
-        return await _dbSet
+        var query = _dbSet
             .Where(p => !p.IsDeleted &&
                    (p.Title.ToLower().Contains(lowerSearchTerm) ||
-                    p.Content.ToLower().Contains(lowerSearchTerm)))
+                    p.Content.ToLower().Contains(lowerSearchTerm)));
+        var totalCount = await query.CountAsync();
+        var items = await query
             .OrderByDescending(p => p.CreatedAt)
             .Include(p => p.Author)
+            .Skip(skip)
+            .Take(pageSize)
             .AsNoTracking()
             .ToListAsync();
+        return new PagedResult<Post>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
     /// <summary>
