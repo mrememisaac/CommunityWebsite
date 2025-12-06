@@ -104,16 +104,8 @@
 
 @section Scripts {
     <script>
-        function isAuthenticated() {
-            return @User.Identity.IsAuthenticated.ToString().ToLower();
-        }
-
         $(document).ready(function () {
-            // Check authentication
-            if (!isAuthenticated()) {
-                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
-                return;
-            }
+            requireLogin();
 
             // Set minimum date to today
             const today = new Date().toISOString().split('T')[0];
@@ -148,13 +140,13 @@
 
                 $('#submitBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Creating...');
 
-                apiRequest('/api/events', 'POST', {
+                apiPost('/events', {
                     title: title,
                     date: eventDateTime.toISOString(),
                     location: location || null,
                     description: description || null
-                }).then(function (result) {
-                    if (result.isSuccess && result.data) {
+                }).then(function (result, textStatus, jqXHR) {
+                    if (jqXHR.status === 201 && result) {
                         showToast('Event created successfully!', 'success');
                         window.location.href = '/Events/Details/' + result.data.id;
                     } else {
