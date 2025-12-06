@@ -1,4 +1,5 @@
 using Xunit;
+using CommunityWebsite.Core.DTOs;
 using FluentAssertions;
 using Moq;
 using CommunityWebsite.Core.Common;
@@ -193,34 +194,49 @@ public class RoleServiceTests
             CreateRoleWithUsers(3, "Moderator", 3)
         };
 
+        var pagedRoles = new PagedResult<Role>
+        {
+            Items = roles,
+            TotalCount = roles.Count,
+            PageNumber = 1,
+            PageSize = 20
+        };
+
         _mockRoleRepository
-            .Setup(r => r.GetAllRolesWithUsersAsync())
-            .ReturnsAsync(roles);
+            .Setup(r => r.GetAllRolesWithUsersAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(pagedRoles);
 
         // Act
         var result = await _roleService.GetAllRolesAsync();
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().HaveCount(3);
-        result.Data!.First(r => r.Name == "Admin").UserCount.Should().Be(2);
-        result.Data!.First(r => r.Name == "User").UserCount.Should().Be(10);
+        result.Data.Items.Should().HaveCount(3);
+        result.Data.Items.First(r => r.Name == "Admin").UserCount.Should().Be(2);
+        result.Data.Items.First(r => r.Name == "User").UserCount.Should().Be(10);
     }
 
     [Fact]
     public async Task GetAllRolesAsync_WithEmptyList_ReturnsEmptyCollection()
     {
         // Arrange
+        var pagedRoles = new PagedResult<Role>
+        {
+            Items = new List<Role>(),
+            TotalCount = 0,
+            PageNumber = 1,
+            PageSize = 20
+        };
         _mockRoleRepository
-            .Setup(r => r.GetAllRolesWithUsersAsync())
-            .ReturnsAsync(new List<Role>());
+            .Setup(r => r.GetAllRolesWithUsersAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(pagedRoles);
 
         // Act
         var result = await _roleService.GetAllRolesAsync();
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().BeEmpty();
+        result.Data.Items.Should().BeEmpty();
     }
 
     #endregion
@@ -441,8 +457,14 @@ public class RoleServiceTests
             .ReturnsAsync(role);
 
         _mockRoleRepository
-            .Setup(r => r.GetUsersInRoleAsync(1))
-            .ReturnsAsync(new List<User>());
+            .Setup(r => r.GetUsersInRoleAsync(1, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(new PagedResult<User>
+            {
+                Items = new List<User>(),
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = 0
+            });
 
         _mockRoleRepository
             .Setup(r => r.DeleteAsync(1))
@@ -500,8 +522,14 @@ public class RoleServiceTests
             .ReturnsAsync(role);
 
         _mockRoleRepository
-            .Setup(r => r.GetUsersInRoleAsync(1))
-            .ReturnsAsync(users);
+            .Setup(r => r.GetUsersInRoleAsync(1, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(new PagedResult<User>
+            {
+                Items = users,
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = users.Count
+            });
 
         // Act
         var result = await _roleService.DeleteRoleAsync(1);
@@ -531,15 +559,21 @@ public class RoleServiceTests
             .ReturnsAsync(role);
 
         _mockRoleRepository
-            .Setup(r => r.GetUsersInRoleAsync(1))
-            .ReturnsAsync(users);
+            .Setup(r => r.GetUsersInRoleAsync(1, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(new PagedResult<User>
+            {
+                Items = users,
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = users.Count
+            });
 
         // Act
         var result = await _roleService.GetUsersInRoleAsync(1);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().HaveCount(2);
+        result.Data!.Items.Should().HaveCount(2);
     }
 
     [Fact]
@@ -589,15 +623,21 @@ public class RoleServiceTests
             .ReturnsAsync(role);
 
         _mockRoleRepository
-            .Setup(r => r.GetUsersInRoleAsync(1))
-            .ReturnsAsync(users);
+            .Setup(r => r.GetUsersInRoleAsync(1, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(new PagedResult<User>
+            {
+                Items = users,
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = users.Count
+            });
 
         // Act
         var result = await _roleService.GetUsersInRoleByNameAsync("Admin");
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().HaveCount(2);
+        result.Data!.Items.Should().HaveCount(2);
     }
 
     [Fact]
