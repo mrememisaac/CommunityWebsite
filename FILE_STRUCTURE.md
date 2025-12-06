@@ -87,11 +87,98 @@
 
 #### Controllers
 
-- `Controllers/PostsController.cs` - 7 post endpoints + 1 user posts endpoint
-- `Controllers/PostsViewController.cs` - 2 view actions (Index, MyPosts)
-- `Controllers/UsersController.cs` - 4 user endpoints
-- `Controllers/UsersViewController.cs` - 1 view action (Profile)
-- `Controllers/AuthController.cs` - 3 authentication endpoints
+**API Controllers (RESTful Endpoints):**
+
+- `Controllers/PostsController.cs` - Posts API
+
+  - `GET /api/posts/{id}` - Get post detail
+  - `GET /api/posts/featured` - Get featured posts
+  - `GET /api/posts/category/{category}` - Get posts by category
+  - `GET /api/posts/search` - Search posts
+  - `GET /api/posts/user/{userId}` - Get user's posts
+  - `POST /api/posts` - Create post
+  - `PUT /api/posts/{id}` - Update post
+  - `DELETE /api/posts/{id}` - Delete post
+
+- `Controllers/CommentsController.cs` - Comments API
+
+  - `GET /api/posts/{postId}/comments` - Get post comments
+  - `GET /api/comments/{id}` - Get comment detail
+  - `POST /api/posts/{postId}/comments` - Create comment
+  - `PUT /api/comments/{id}` - Update comment
+  - `DELETE /api/comments/{id}` - Delete comment
+
+- `Controllers/EventsController.cs` - Events API
+
+  - `GET /api/events/upcoming` - Get upcoming events
+  - `GET /api/events/past` - Get past events
+  - `GET /api/events/{id}` - Get event detail
+  - `POST /api/events` - Create event
+  - `PUT /api/events/{id}` - Update event
+  - `DELETE /api/events/{id}` - Delete event
+
+- `Controllers/UsersController.cs` - Users API
+
+  - `GET /api/users` - List users
+  - `GET /api/users/{id}` - Get user profile
+  - `POST /api/users` - Create user
+  - `PUT /api/users/{id}` - Update user
+  - `DELETE /api/users/{id}` - Delete user
+
+- `Controllers/RolesController.cs` - Roles API
+
+  - `GET /api/roles` - List roles
+  - `GET /api/roles/{id}` - Get role detail
+  - `POST /api/roles` - Create role
+  - `POST /api/roles/{roleId}/users/{userId}` - Assign role
+  - `DELETE /api/roles/{roleId}/users/{userId}` - Remove role
+
+- `Controllers/AdminUsersController.cs` - Admin Users API
+
+  - `GET /api/admin/users` - List all users (admin)
+  - `GET /api/admin/users/{id}` - Get user (admin)
+  - `PUT /api/admin/users/{id}` - Update user (admin)
+  - `DELETE /api/admin/users/{id}` - Delete user (admin)
+
+- `Controllers/AuthController.cs` - Authentication API
+  - `POST /api/auth/register` - Register user
+  - `POST /api/auth/login` - Login user
+  - `GET /api/auth/me` - Get current user
+
+**View Controllers (MVC Pages):**
+
+- `Controllers/HomeController.cs` - Home page
+- `Controllers/PostsViewController.cs` - Posts pages
+
+  - `GET /Posts` or `GET /Posts/Index` - Posts list
+  - `GET /Posts/Details/{id}` - Post detail
+  - `GET /Posts/Create` - Create form
+  - `GET /Posts/Edit/{id}` - Edit form
+  - `GET /Posts/MyPosts` - User's posts
+
+- `Controllers/EventsViewController.cs` - Events pages
+
+  - `GET /Events` or `GET /Events/Index` - Events list
+  - `GET /Events/Details/{id}` - Event detail
+  - `GET /Events/Create` - Create form
+  - `GET /Events/Edit/{id}` - Edit form
+
+- `Controllers/UsersViewController.cs` - User pages
+
+  - `GET /Users/Profile/{id}` - User profile
+  - Search and filtering
+
+- `Controllers/AdminUsersViewController.cs` - Admin pages
+
+  - `GET /Admin/Users` - User management
+
+- `Controllers/AccountController.cs` - Account pages
+
+  - `GET /Account/Login` - Login page
+  - `GET /Account/Register` - Register page
+
+- `Controllers/Base/ApiControllerBase.cs` - Base API controller
+- `Controllers/Base/ViewControllerBase.cs` - Base view controller
 
 #### Configuration
 

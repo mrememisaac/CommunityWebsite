@@ -117,13 +117,24 @@ dotnet run
 
 ### Default URLs
 
-| URL                                   | Description               |
-| ------------------------------------- | ------------------------- |
-| `http://localhost:5000`               | Swagger API Documentation |
-| `http://localhost:5000/Home`          | Home Page (MVC)           |
-| `http://localhost:5000/Posts`         | Posts Page                |
-| `http://localhost:5000/Events`        | Events Page               |
-| `http://localhost:5000/Account/Login` | Login Page                |
+| URL                                   | Description                   |
+| ------------------------------------- | ----------------------------- |
+| `http://localhost:7000`               | Home Page (Web UI)            |
+| `http://localhost:7000/swagger`       | **Swagger API Documentation** |
+| `http://localhost:7000/Home`          | Home Page (MVC)               |
+| `http://localhost:7000/Posts`         | Posts Page                    |
+| `http://localhost:7000/Events`        | Events Page                   |
+| `http://localhost:7000/Admin/Users`   | Admin User Management         |
+| `http://localhost:7000/Account/Login` | Login Page                    |
+
+### Development Credentials
+
+**Admin User** (for testing admin features):
+
+- Email: `admin@example.com`
+- Password: `AdminPassword123!`
+
+This user is automatically created on first run and has full admin access.
 
 ---
 
@@ -145,6 +156,12 @@ dotnet run
 - View upcoming and past events
 - Filter by date and search by keyword
 - Register/unregister for events
+
+### 👥 User Profiles
+
+- View user profile information
+- See user's posts and activity
+- Follow member contributions
 
 ### 🔐 Authentication
 
@@ -224,20 +241,28 @@ git push origin feature/your-feature-name
 
 ## Docker Setup
 
+### Prerequisites for Docker
+
+- Docker installed and running
+- Docker Compose (included with Docker Desktop)
+- No need for local SQL Server installation
+
 ### Build and Run with Docker
 
 ```powershell
 # Build the image
-docker build -t community-website .
+docker build -t community-website:latest .
 
-# Run the container
-docker run -p 5000:80 community-website
+# Run the container (requires separate database)
+docker run -p 5000:80 community-website:latest
 ```
 
-### Using Docker Compose
+### Using Docker Compose (Recommended)
+
+The easiest way to run the entire stack including database:
 
 ```powershell
-# Build and start all services
+# Build and start all services (API + Database)
 docker-compose up --build
 
 # Run in background
@@ -245,7 +270,36 @@ docker-compose up -d
 
 # Stop services
 docker-compose down
+
+# Stop and remove volumes (clean database)
+docker-compose down -v
+
+# View logs
+docker-compose logs -f community-website
 ```
+
+**Services started:**
+
+- **API**: http://localhost:5000
+- **Swagger Documentation**: http://localhost:5000/swagger
+- **Database**: MSSQL Server 2022 (internal, not exposed)
+
+### Docker Compose Configuration
+
+The `docker-compose.yml` includes:
+
+1. **MSSQL 2022 Database Service**
+
+   - Automatic migrations
+   - Health checks
+   - Persistent volume (`mssql-data`)
+   - SA Password: `YourStrong!Password123`
+
+2. **ASP.NET Core Web API Service**
+   - Auto-restart policy
+   - Depends on database health
+   - Environment: Development
+   - Mapped ports: 5000:80, 5001:443
 
 ---
 
