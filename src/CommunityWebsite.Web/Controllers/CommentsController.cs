@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Requests;
 using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Services.Interfaces;
@@ -29,15 +30,16 @@ public class CommentsController : ApiControllerBase
     [HttpGet("posts/{postId}/comments")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IEnumerable<CommentDto>>> GetPostComments(int postId)
+    public async Task<ActionResult<PagedResult<CommentDto>>> GetPostComments(
+        int postId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20)
     {
         _logger.LogInformation("GET /api/posts/{PostId}/comments", postId);
 
-        var result = await _commentService.GetPostCommentsAsync(postId);
-
+        var result = await _commentService.GetPostCommentsAsync(postId, pageNumber, pageSize);
         if (!result.IsSuccess)
             return NotFound(new { error = result.ErrorMessage });
-
         return Ok(result.Data);
     }
 
