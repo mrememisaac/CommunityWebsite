@@ -1,4 +1,5 @@
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Requests;
 using CommunityWebsite.Core.DTOs.Responses;
 
@@ -11,9 +12,9 @@ namespace CommunityWebsite.Core.Services.Interfaces;
 public interface IEventService
 {
     Task<Result<EventDto>> GetEventByIdAsync(int eventId);
-    Task<Result<IEnumerable<EventDto>>> GetUpcomingEventsAsync(int limit = 20);
-    Task<Result<IEnumerable<EventDto>>> GetPastEventsAsync(int limit = 20);
-    Task<Result<IEnumerable<EventDto>>> GetEventsByOrganizerAsync(int userId);
+    Task<Result<PagedResult<EventDto>>> GetUpcomingEventsAsync(int limit = 20, int pageNumber = 1, int pageSize = 20);
+    Task<Result<PagedResult<EventDto>>> GetPastEventsAsync(int limit = 20, int pageNumber = 1, int pageSize = 20);
+    Task<Result<PagedResult<EventDto>>> GetEventsByOrganizerAsync(int userId, int pageNumber = 1, int pageSize = 20);
     Task<Result<EventDto>> CreateEventAsync(int organizerId, CreateEventRequest request);
     Task<Result<EventDto>> UpdateEventAsync(int eventId, int userId, UpdateEventRequest request);
     Task<Result> CancelEventAsync(int eventId, int userId);

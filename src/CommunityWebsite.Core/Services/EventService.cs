@@ -1,4 +1,5 @@
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Requests;
 using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Models;
@@ -64,7 +65,7 @@ public class EventService : IEventService
     /// <summary>
     /// Gets upcoming events
     /// </summary>
-    public async Task<Result<IEnumerable<EventDto>>> GetUpcomingEventsAsync(int limit = 20)
+    public async Task<Result<PagedResult<EventDto>>> GetUpcomingEventsAsync(int limit = 20, int pageNumber = 1, int pageSize = 20)
     {
         try
         {
@@ -72,26 +73,33 @@ public class EventService : IEventService
 
             if (limit < 1 || limit > 100)
             {
-                return Result<IEnumerable<EventDto>>.Failure("Limit must be between 1 and 100");
+                return Result<PagedResult<EventDto>>.Failure("Limit must be between 1 and 100");
             }
 
-            var events = await _eventRepository.GetUpcomingEventsAsync(limit);
-
-            var dtos = events.Select(e => MapToDto(e, e.Organizer));
-
-            return Result<IEnumerable<EventDto>>.Success(dtos);
+            var pagedResult = await _eventRepository.GetUpcomingEventsAsync(pageNumber, pageSize);
+            var items = pagedResult.Items.Select(e => MapToDto(e, e.Organizer)).ToList();
+            // Apply limit if specified and less than total items
+            var limitedItems = items.Take(limit).ToList();
+            var dtoResult = new PagedResult<EventDto>
+            {
+                Items = limitedItems,
+                TotalCount = pagedResult.TotalCount,
+                PageNumber = pagedResult.PageNumber,
+                PageSize = pagedResult.PageSize
+            };
+            return Result<PagedResult<EventDto>>.Success(dtoResult);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving upcoming events");
-            return Result<IEnumerable<EventDto>>.Failure("An error occurred while retrieving events.");
+            return Result<PagedResult<EventDto>>.Failure("An error occurred while retrieving events.");
         }
     }
 
     /// <summary>
     /// Gets past events
     /// </summary>
-    public async Task<Result<IEnumerable<EventDto>>> GetPastEventsAsync(int limit = 20)
+    public async Task<Result<PagedResult<EventDto>>> GetPastEventsAsync(int limit = 20, int pageNumber = 1, int pageSize = 20)
     {
         try
         {
@@ -99,26 +107,33 @@ public class EventService : IEventService
 
             if (limit < 1 || limit > 100)
             {
-                return Result<IEnumerable<EventDto>>.Failure("Limit must be between 1 and 100");
+                return Result<PagedResult<EventDto>>.Failure("Limit must be between 1 and 100");
             }
 
-            var events = await _eventRepository.GetPastEventsAsync(limit);
-
-            var dtos = events.Select(e => MapToDto(e, e.Organizer));
-
-            return Result<IEnumerable<EventDto>>.Success(dtos);
+            var pagedResult = await _eventRepository.GetPastEventsAsync(pageNumber, pageSize);
+            var items = pagedResult.Items.Select(e => MapToDto(e, e.Organizer)).ToList();
+            // Apply limit if specified and less than total items
+            var limitedItems = items.Take(limit).ToList();
+            var dtoResult = new PagedResult<EventDto>
+            {
+                Items = limitedItems,
+                TotalCount = pagedResult.TotalCount,
+                PageNumber = pagedResult.PageNumber,
+                PageSize = pagedResult.PageSize
+            };
+            return Result<PagedResult<EventDto>>.Success(dtoResult);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving past events");
-            return Result<IEnumerable<EventDto>>.Failure("An error occurred while retrieving events.");
+            return Result<PagedResult<EventDto>>.Failure("An error occurred while retrieving events.");
         }
     }
 
     /// <summary>
     /// Gets events by organizer
     /// </summary>
-    public async Task<Result<IEnumerable<EventDto>>> GetEventsByOrganizerAsync(int userId)
+    public async Task<Result<PagedResult<EventDto>>> GetEventsByOrganizerAsync(int userId, int pageNumber = 1, int pageSize = 20)
     {
         try
         {
@@ -126,25 +141,29 @@ public class EventService : IEventService
 
             if (userId <= 0)
             {
-                return Result<IEnumerable<EventDto>>.Failure("Invalid user ID");
+                return Result<PagedResult<EventDto>>.Failure("Invalid user ID");
             }
 
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
             {
-                return Result<IEnumerable<EventDto>>.Failure("User not found");
+                return Result<PagedResult<EventDto>>.Failure("User not found");
             }
 
-            var events = await _eventRepository.GetEventsByOrganizerAsync(userId);
-
-            var dtos = events.Select(e => MapToDto(e, user));
-
-            return Result<IEnumerable<EventDto>>.Success(dtos);
+            var pagedEvents = await _eventRepository.GetEventsByOrganizerAsync(userId, pageNumber, pageSize);
+            var dtoResult = new PagedResult<EventDto>
+            {
+                Items = pagedEvents.Items.Select(e => MapToDto(e, user)).ToList(),
+                TotalCount = pagedEvents.TotalCount,
+                PageNumber = pagedEvents.PageNumber,
+                PageSize = pagedEvents.PageSize
+            };
+            return Result<PagedResult<EventDto>>.Success(dtoResult);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving events for organizer {UserId}", userId);
-            return Result<IEnumerable<EventDto>>.Failure("An error occurred while retrieving events.");
+            return Result<PagedResult<EventDto>>.Failure("An error occurred while retrieving events.");
         }
     }
 
