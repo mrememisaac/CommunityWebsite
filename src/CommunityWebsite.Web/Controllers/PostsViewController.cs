@@ -36,13 +36,13 @@ public class PostsViewController : ViewControllerBase
 
         // Get featured posts (we'll use this as the base list)
         var result = await _postService.GetFeaturedPostsAsync();
-        var posts = result.Data?.ToList() ?? new List<PostSummaryDto>();
+        var posts = result.Data?.Items?.ToList() ?? new List<PostSummaryDto>();
 
         // If search term provided, use search instead
         if (!string.IsNullOrWhiteSpace(search))
         {
             var searchResult = await _postService.SearchPostsAsync(search);
-            posts = searchResult.Data?.ToList() ?? new List<PostSummaryDto>();
+            posts = searchResult.Data?.Items?.ToList() ?? new List<PostSummaryDto>();
         }
 
         // Convert to PostDto for view compatibility
@@ -67,7 +67,7 @@ public class PostsViewController : ViewControllerBase
 
         // Pagination
         const int pageSize = 10;
-        var totalPages = (int)Math.Ceiling(postDtos.Count / (double)pageSize);
+        var totalPages = (int)Math.Ceiling((result.Data?.TotalCount ?? postDtos.Count) / (double)pageSize);
         postDtos = postDtos.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
         ViewBag.Search = search;
@@ -98,7 +98,7 @@ public class PostsViewController : ViewControllerBase
 
         // Get comments for the post
         var commentsResult = await _commentService.GetPostCommentsAsync(id);
-        ViewBag.Comments = commentsResult.Data ?? new List<CommentDto>();
+        ViewBag.Comments = commentsResult.Data?.Items ?? new List<CommentDto>();
 
         // Map PostDetailDto to PostDto for the view
         var postDto = new PostDto
