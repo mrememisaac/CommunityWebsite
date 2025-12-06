@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using CommunityWebsite.Web.Controllers;
 using CommunityWebsite.Core.Services.Interfaces;
 using CommunityWebsite.Core.DTOs.Responses;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.Common;
 
 namespace CommunityWebsite.Tests.Controllers;
@@ -49,10 +50,25 @@ public class HomeControllerTests
             new() { Id = 2, Title = "Test Event 2", Date = DateTime.UtcNow.AddDays(14) }
         };
 
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Success(posts));
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(4))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(events));
+        var pagedPosts = new PagedResult<PostSummaryDto>
+        {
+            Items = posts,
+            PageNumber = 1,
+            PageSize = 1,
+            TotalCount = posts.Count
+        };
+        var pagedEvents = new PagedResult<EventDto>
+        {
+            Items = events,
+            PageNumber = 1,
+            PageSize = 1,
+            TotalCount = events.Count
+        };
+
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Success(pagedPosts));
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(pagedEvents));
 
         // Act
         var result = await _controller.Index();
@@ -67,10 +83,16 @@ public class HomeControllerTests
     public async Task Index_WhenPostServiceFails_StillReturnsView()
     {
         // Arrange
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Failure("Service unavailable"));
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(4))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(new List<EventDto>()));
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Failure("Service unavailable"));
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(new PagedResult<EventDto>
+            {
+                Items = new List<EventDto>(),
+                PageNumber = 1,
+                PageSize = 1,
+                TotalCount = 0
+            }));
 
         // Act
         var result = await _controller.Index();
@@ -83,10 +105,16 @@ public class HomeControllerTests
     public async Task Index_WhenEventServiceFails_StillReturnsView()
     {
         // Arrange
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Success(new List<PostSummaryDto>()));
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(4))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Failure("Service unavailable"));
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Success(new PagedResult<PostSummaryDto>
+            {
+                Items = new List<PostSummaryDto>(),
+                PageNumber = 1,
+                PageSize = 1,
+                TotalCount = 0
+            }));
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Failure("Service unavailable"));
 
         // Act
         var result = await _controller.Index();
@@ -99,7 +127,7 @@ public class HomeControllerTests
     public async Task Index_WhenExceptionOccurs_ReturnsViewWithEmptyCollections()
     {
         // Arrange
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
             .ThrowsAsync(new Exception("Database error"));
 
         // Act
