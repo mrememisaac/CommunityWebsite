@@ -101,16 +101,14 @@
 
 @section Scripts {
     <script>
-        function isAuthenticated() {
-            return @User.Identity.IsAuthenticated.ToString().ToLower();
-        }
+        const isAuthenticated = isLoggedIn()
 
         $(document).ready(function () {
             const postId = $('#postId').val();
             const deleteModal = new bootstrap.Modal('#deleteModal');
 
             // Check authentication and authorization
-            if (!isAuthenticated()) {
+            if (!isAuthenticated) {
                 window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
                 return;
             }
@@ -135,19 +133,19 @@
                 }
 
                 $('#submitBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
-
-                apiRequest(`/api/posts/${postId}`, 'PUT', {
+                apiPut(`/posts/${postId}`, {
                     title: title,
                     content: content
-                }).then(function (result) {
-                    if (result.isSuccess) {
+                }).then(function (result, textStatus, jqXHR) {
+                    if (jqXHR.status === 200 && result) {
                         showToast('Post updated successfully!', 'success');
                         window.location.href = '/Posts/Details/' + postId;
                     } else {
                         showToast(result.errors?.join(', ') || 'Failed to update post', 'danger');
                         $('#submitBtn').prop('disabled', false).html('<i class="bi bi-check-lg me-2"></i>Save Changes');
                     }
-                }).catch(function () {
+                }).catch(function (e) {
+                    console.error('Error updating post:', e);
                     showToast('Failed to update post. Please try again.', 'danger');
                     $('#submitBtn').prop('disabled', false).html('<i class="bi bi-check-lg me-2"></i>Save Changes');
                 });
