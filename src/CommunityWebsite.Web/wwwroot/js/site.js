@@ -10,15 +10,72 @@ const API_BASE = '/api';
 const TOKEN_KEY = 'authToken';
 const USER_KEY = 'currentUser';
 
+
 // ============================================
 // Authentication Functions
 // ============================================
 
 /**
+ * Periodically check if the JWT is still valid and log out if not
+ */
+function startTokenValidityMonitor(intervalMs = 300000) {
+    setInterval(checkToken, intervalMs);
+}
+
+function checkToken() {
+    const token = getToken();
+    if (!token) return;
+    const payload = getJwtPayload(token);
+    if (!payload || !payload.exp) return;
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp < now) {
+        logout();
+    }
+}
+/**
+ * Helper to decode JWT payload
+ */
+function getJwtPayload(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
  * Check if user is logged in
  */
-function isLoggedIn() {
-    return localStorage.getItem(TOKEN_KEY) !== null;
+async function isLoggedIn() {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        // console.log('No auth token found');
+        return false;
+    }
+    // console.log('Auth token found:', token);
+    try {
+        return checkToken(); //await verifyTokenFromServer(token); // True if token is valid on server
+    } catch (error) {
+        // console.error('Verification failed', error);
+        return false;
+    }
+}
+
+async function verifyTokenFromServer(token) {
+    const response = await fetch('/api/auth/verify', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    });
+    // console.log('Token verification response:', response);
+    return response.ok;
 }
 
 /**
@@ -34,6 +91,14 @@ function getToken() {
 function getCurrentUser() {
     const userJson = localStorage.getItem(USER_KEY);
     return userJson ? JSON.parse(userJson) : null;
+}
+
+/** Redirect to login if not authenticated
+ */
+function requireLogin(redirectUrl = '/Account/Login') {
+    if (!isLoggedIn()) {
+        window.location.href = redirectUrl + '?returnUrl=' + encodeURIComponent(window.location.pathname);
+    }
 }
 
 /**
@@ -107,20 +172,29 @@ function logout() {
  * Make authenticated API request
  */
 function apiRequest(url, options = {}) {
+    requireLogin();
     const token = getToken();
 
     const defaultOptions = {
+        type: 'GET',  // Default HTTP method
         headers: {
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
     };
 
+    // Convert 'method' to 'type' for jQuery compatibility
+    const ajaxOptions = { ...options };
+    if (ajaxOptions.method) {
+        ajaxOptions.type = ajaxOptions.method;
+        delete ajaxOptions.method;
+    }
+
     return $.ajax({
         url: API_BASE + url,
         ...defaultOptions,
-        ...options,
-        headers: { ...defaultOptions.headers, ...options.headers }
+        ...ajaxOptions,
+        headers: { ...defaultOptions.headers, ...ajaxOptions.headers }
     });
 }
 
@@ -508,6 +582,12 @@ $(document).ready(function () {
             }
         });
     });
+
+
+    // Start token validity monitor if logged in
+    if (getToken()) {
+        startTokenValidityMonitor();
+    }
 
     console.log('Community Hub initialized');
 });
