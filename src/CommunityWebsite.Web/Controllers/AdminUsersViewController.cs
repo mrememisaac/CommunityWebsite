@@ -23,26 +23,29 @@ public class AdminUsersViewController : Controller
     }
 
     /// <summary>
-    /// Display user management page
+    /// Display user management page with pagination
     /// </summary>
     [HttpGet("/admin/users")]
     public async Task<IActionResult> Index(int pageNumber = 1, string? searchTerm = null)
     {
         _logger.LogInformation("Admin accessing users management page");
 
-        var result = await _adminUserService.GetAllUsersAsync(pageNumber, 20, searchTerm);
+        const int pageSize = 20;
+        var result = await _adminUserService.GetAllUsersAsync(pageNumber, pageSize, searchTerm);
         if (!result.IsSuccess)
         {
             ViewBag.Error = result.ErrorMessage;
-            return View("~/Views/Admin/Users/Index.cshtml", new List<object>());
+            return View("~/Views/Admin/Users/Index.cshtml", new List<AdminUserDto>());
         }
 
         var rolesResult = await _adminUserService.GetAllRolesAsync();
         ViewBag.AvailableRoles = rolesResult.IsSuccess ? (rolesResult.Data?.ToList() ?? new List<RoleDto>()) : new List<RoleDto>();
         ViewBag.SearchTerm = searchTerm;
         ViewBag.PageNumber = pageNumber;
+        ViewBag.TotalPages = (int)Math.Ceiling((double)(result.Data?.TotalCount ?? 0) / pageSize);
+        ViewBag.PageSize = pageSize;
 
-        return View("~/Views/Admin/Users/Index.cshtml", result.Data);
+        return View("~/Views/Admin/Users/Index.cshtml", result.Data?.Items ?? new List<AdminUserDto>());
     }
 
     /// <summary>
