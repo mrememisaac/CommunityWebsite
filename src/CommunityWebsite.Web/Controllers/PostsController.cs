@@ -53,16 +53,13 @@ public class PostsController : ApiControllerBase
     [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)] // 1 hour
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<PostSummaryDto>>> GetFeaturedPosts()
+    public async Task<ActionResult<IEnumerable<PostSummaryDto>>> GetFeaturedPosts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
     {
         _logger.LogInformation("GET /api/posts/featured");
 
-        var result = await _postService.GetFeaturedPostsAsync();
-
+        var result = await _postService.GetFeaturedPostsAsync(pageNumber, pageSize);
         if (!result.IsSuccess)
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { error = result.ErrorMessage });
-
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = result.ErrorMessage });
         return Ok(result.Data);
     }
 
@@ -75,15 +72,14 @@ public class PostsController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IEnumerable<PostSummaryDto>>> GetByCategory(
         string category,
-        [FromQuery] int pageNumber = 1)
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20)
     {
         _logger.LogInformation("GET /api/posts/category/{Category}?pageNumber={PageNumber}", category, pageNumber);
 
-        var result = await _postService.GetPostsByCategoryAsync(category, pageNumber);
-
+        var result = await _postService.GetPostsByCategoryAsync(category, pageNumber, pageSize);
         if (!result.IsSuccess)
             return BadRequest(new { error = result.ErrorMessage });
-
         return Ok(result.Data);
     }
 
@@ -101,11 +97,9 @@ public class PostsController : ApiControllerBase
         if (string.IsNullOrWhiteSpace(q))
             return BadRequest(new { error = "Search term (q) is required" });
 
-        var result = await _postService.SearchPostsAsync(q);
-
+        var result = await _postService.SearchPostsAsync(q, pageNumber: 1, pageSize: 20);
         if (!result.IsSuccess)
             return BadRequest(new { error = result.ErrorMessage });
-
         return Ok(result.Data);
     }
 
@@ -217,11 +211,9 @@ public class PostsController : ApiControllerBase
         if (userId <= 0)
             return BadRequest(new { error = "Invalid user ID" });
 
-        var result = await _postService.GetPostsByUserAsync(userId);
-
+        var result = await _postService.GetPostsByUserAsync(userId, pageNumber: 1, pageSize: 20);
         if (!result.IsSuccess)
             return BadRequest(new { error = result.ErrorMessage });
-
         return Ok(result.Data);
     }
 }
