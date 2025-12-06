@@ -1,4 +1,5 @@
 using Xunit;
+using CommunityWebsite.Core.DTOs;
 using FluentAssertions;
 using Moq;
 using CommunityWebsite.Core.Common;
@@ -136,8 +137,8 @@ public class CommentServiceTests
             .ReturnsAsync(post);
 
         _mockCommentRepository
-            .Setup(r => r.GetPostCommentsAsync(postId))
-            .ReturnsAsync(comments);
+            .Setup(r => r.GetPostCommentsAsync(postId, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(new PagedResult<Comment> { Items = comments, TotalCount = comments.Count, PageNumber = 1, PageSize = 20 });
 
         // Act
         var result = await _commentService.GetPostCommentsAsync(postId);
@@ -145,7 +146,7 @@ public class CommentServiceTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().NotBeNull();
-        result.Data.Should().HaveCount(3); // 2 top-level comments + 1 reply
+        result.Data!.Items.Should().HaveCount(3); // 2 top-level comments + 1 reply
         result.ErrorMessage.Should().BeNull();
     }
 
