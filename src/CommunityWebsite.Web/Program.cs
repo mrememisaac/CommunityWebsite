@@ -82,7 +82,25 @@ try
                 IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
                     System.Text.Encoding.UTF8.GetBytes(jwtSecret))
             };
+
+            // Integrate JWT with User.Identity for Razor views and controllers
+            options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+            {
+                OnTokenValidated = context =>
+                {
+                    // JWT middleware automatically populates User.Identity.IsAuthenticated
+                    // from the token claims. No additional code needed - just return.
+                    return Task.CompletedTask;
+                }
+            };
         });
+
+    // Set default authentication scheme so User.Identity works consistently
+    builder.Services.Configure<Microsoft.AspNetCore.Authentication.AuthenticationOptions>(options =>
+    {
+        options.DefaultAuthenticateScheme = "Bearer";
+        options.DefaultChallengeScheme = "Bearer";
+    });
 
     // Register input sanitization
     builder.Services.AddScoped<IInputSanitizer, InputSanitizer>();
@@ -140,23 +158,32 @@ try
     // Add CORS with environment-specific policy
     builder.Services.AddCors(options =>
     {
+        // In development, completely open CORS
         options.AddPolicy("Development", policy =>
         {
-            policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "https://localhost:7001")
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials();
+            policy.AllowAnyOrigin()        // Allow any origin
+                  .AllowAnyMethod()        // Allow any HTTP method (GET, POST, PUT, DELETE, OPTIONS, etc.)
+                  .AllowAnyHeader();       // Allow any header
+                                           // Don't use AllowCredentials with AllowAnyOrigin - they're incompatible
         });
 
+        // Production policy
         options.AddPolicy("Production", policy =>
         {
-            // In production, configure specific allowed origins from configuration
-            var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                ?? Array.Empty<string>();
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials();
+            var prodOrigins = builder.Configuration.GetSection("Cors:Production").Get<string[]>();
+
+            if (prodOrigins != null && prodOrigins.Length > 0)
+            {
+                policy.WithOrigins(prodOrigins)
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
+            else
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
         });
     });
 
@@ -196,8 +223,16 @@ try
     app.UseStaticFiles();
     app.UseSerilogRequestLogging();
 
-    // Apply environment-specific CORS policy
-    app.UseCors(app.Environment.IsDevelopment() ? "Development" : "Production");
+    // Apply CORS BEFORE authentication - this is critical for preflight requests
+    if (app.Environment.IsDevelopment())
+    {
+        // In development, completely disable CORS for testing
+        app.UseCors("Development");
+    }
+    else
+    {
+        app.UseCors("Production");
+    }
 
     app.UseAuthentication();
     app.UseAuthorization();
