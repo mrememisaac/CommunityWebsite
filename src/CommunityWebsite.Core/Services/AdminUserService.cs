@@ -1,9 +1,11 @@
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Models;
 using CommunityWebsite.Core.Repositories.Interfaces;
 using CommunityWebsite.Core.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace CommunityWebsite.Core.Services;
 
@@ -39,21 +41,21 @@ public class AdminUserService : IAdminUserService
     /// Gets all users with pagination and optional filtering.
     /// Optimized to use database-level filtering and batched queries to avoid N+1 issues.
     /// </summary>
-    public async Task<Result<IEnumerable<AdminUserDto>>> GetAllUsersAsync(int pageNumber = 1, int pageSize = 20, string? searchTerm = null)
+    public async Task<Result<PagedResult<AdminUserDto>>> GetAllUsersAsync(int pageNumber = 1, int pageSize = 20, string? searchTerm = null)
     {
         try
         {
             _logger.LogInformation("Retrieving all users for admin panel, page {PageNumber}, search: {SearchTerm}", pageNumber, searchTerm);
 
             if (pageNumber < 1)
-                return Result<IEnumerable<AdminUserDto>>.Failure("Page number must be greater than zero.");
+                return Result<PagedResult<AdminUserDto>>.Failure("Page number must be greater than zero.");
 
             if (pageSize < 1 || pageSize > 100)
-                return Result<IEnumerable<AdminUserDto>>.Failure("Page size must be between 1 and 100.");
+                return Result<PagedResult<AdminUserDto>>.Failure("Page size must be between 1 and 100.");
 
             // Use optimized repository method with database-level filtering and pagination
-            var (users, _) = await _userRepository.GetUsersWithStatsAsync(pageNumber, pageSize, searchTerm);
-            var usersList = users.ToList();
+            var pagedResult = await _userRepository.GetUsersWithStatsAsync(pageNumber, pageSize, searchTerm);
+            var usersList = pagedResult.Items.ToList();
 
             // Batch fetch all post and comment counts to avoid N+1 queries
             var userIds = usersList.Select(u => u.Id).ToList();
@@ -64,7 +66,7 @@ public class AdminUserService : IAdminUserService
             var commentCounts = await Task.WhenAll(commentCountTasks);
 
             // Build result with pre-fetched counts
-            var result = usersList.Select((user, index) => new AdminUserDto
+            var dtoItems = usersList.Select((user, index) => new AdminUserDto
             {
                 Id = user.Id,
                 Username = user.Username,
@@ -77,12 +79,20 @@ public class AdminUserService : IAdminUserService
                 CommentCount = commentCounts[index]
             }).ToList();
 
-            return Result<IEnumerable<AdminUserDto>>.Success(result);
+            var result = new PagedResult<AdminUserDto>
+            {
+                Items = dtoItems,
+                TotalCount = pagedResult.TotalCount,
+                PageNumber = pagedResult.PageNumber,
+                PageSize = pagedResult.PageSize
+            };
+
+            return Result<PagedResult<AdminUserDto>>.Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving users for admin panel");
-            return Result<IEnumerable<AdminUserDto>>.Failure("An error occurred while retrieving users.");
+            return Result<PagedResult<AdminUserDto>>.Failure("An error occurred while retrieving users.");
         }
     }
 
@@ -212,8 +222,8 @@ public class AdminUserService : IAdminUserService
             // Prevent removing the last Admin role
             if (roleName == "Admin")
             {
-                var adminCount = await _userRepository.GetUsersByRoleAsync("Admin");
-                if (adminCount.Count() <= 1)
+                var adminPaged = await _userRepository.GetUsersByRoleAsync("Admin", 1, 100);
+                if (adminPaged.Items.Count() <= 1)
                     return Result<string>.Failure("Cannot remove the last Admin role. At least one admin must exist.");
             }
 

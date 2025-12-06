@@ -1,4 +1,5 @@
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Requests;
 using CommunityWebsite.Core.DTOs.Responses;
 
@@ -12,7 +13,7 @@ public interface IAdminUserService
     /// <summary>
     /// Gets all users with pagination and optional filtering
     /// </summary>
-    Task<Result<IEnumerable<AdminUserDto>>> GetAllUsersAsync(int pageNumber = 1, int pageSize = 20, string? searchTerm = null);
+    Task<Result<PagedResult<AdminUserDto>>> GetAllUsersAsync(int pageNumber = 1, int pageSize = 20, string? searchTerm = null);
 
     /// <summary>
     /// Gets a specific user with all their roles and details
