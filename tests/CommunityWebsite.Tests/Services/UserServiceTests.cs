@@ -1,4 +1,5 @@
 using Xunit;
+using CommunityWebsite.Core.DTOs;
 using FluentAssertions;
 using Moq;
 using CommunityWebsite.Core.Common;
@@ -123,9 +124,16 @@ public class UserServiceTests
             .Setup(r => r.GetUserWithRolesAsync(userId))
             .ReturnsAsync(user);
 
+        var pagedPosts = new PagedResult<Post>
+        {
+            Items = posts,
+            TotalCount = posts.Count,
+            PageNumber = 1,
+            PageSize = 20
+        };
         _mockPostRepository
-            .Setup(r => r.GetUserPostsAsync(userId, false))
-            .ReturnsAsync(posts);
+            .Setup(r => r.GetUserPostsAsync(userId, It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+            .ReturnsAsync(pagedPosts);
 
         // Act
         var result = await _userService.GetUserProfileAsync(userId);
@@ -187,9 +195,16 @@ public class UserServiceTests
             .Setup(r => r.GetUserWithRolesAsync(1))
             .ReturnsAsync(userWithRoles);
 
+        var pagedPosts = new PagedResult<Post>
+        {
+            Items = new List<Post>(),
+            TotalCount = 0,
+            PageNumber = 1,
+            PageSize = 20
+        };
         _mockPostRepository
-            .Setup(r => r.GetUserPostsAsync(1, false))
-            .ReturnsAsync(new List<Post>());
+            .Setup(r => r.GetUserPostsAsync(1, It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+            .ReturnsAsync(pagedPosts);
 
         // Act
         var result = await _userService.GetUserByEmailAsync(email);
@@ -247,9 +262,16 @@ public class UserServiceTests
             .Setup(r => r.GetUserWithRolesAsync(1))
             .ReturnsAsync(userWithRoles);
 
+        var pagedPosts = new PagedResult<Post>
+        {
+            Items = new List<Post>(),
+            TotalCount = 0,
+            PageNumber = 1,
+            PageSize = 20
+        };
         _mockPostRepository
-            .Setup(r => r.GetUserPostsAsync(1, false))
-            .ReturnsAsync(new List<Post>());
+            .Setup(r => r.GetUserPostsAsync(1, It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+            .ReturnsAsync(pagedPosts);
 
         // Act
         var result = await _userService.GetUserByUsernameAsync(username);
@@ -285,16 +307,24 @@ public class UserServiceTests
             CreateSampleUser(3)
         };
 
+        var pagedResult = new PagedResult<User>
+        {
+            Items = users,
+            TotalCount = users.Count,
+            PageNumber = 1,
+            PageSize = 20
+        };
+
         _mockUserRepository
             .Setup(r => r.GetActiveUsersAsync(1, 20))
-            .ReturnsAsync(users);
+            .ReturnsAsync(pagedResult);
 
         // Act
         var result = await _userService.GetActiveUsersAsync(1, 20);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().HaveCount(3);
+        result.Data.Items.Should().HaveCount(3);
     }
 
     [Fact]
@@ -333,23 +363,31 @@ public class UserServiceTests
             CreateSampleUser(2)
         };
 
+        var pagedResult = new PagedResult<User>
+        {
+            Items = users,
+            TotalCount = users.Count,
+            PageNumber = 1,
+            PageSize = 20
+        };
+
         _mockUserRepository
-            .Setup(r => r.GetUsersByRoleAsync("Admin"))
-            .ReturnsAsync(users);
+            .Setup(r => r.GetUsersByRoleAsync("Admin", It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(pagedResult);
 
         // Act
-        var result = await _userService.GetUsersByRoleAsync("Admin");
+        var result = await _userService.GetUsersByRoleAsync("Admin", 1, 20);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().HaveCount(2);
+        result.Data.Items.Should().HaveCount(2);
     }
 
     [Fact]
     public async Task GetUsersByRoleAsync_WithEmptyRole_ReturnsFailure()
     {
         // Act
-        var result = await _userService.GetUsersByRoleAsync("");
+        var result = await _userService.GetUsersByRoleAsync("", It.IsAny<int>(), It.IsAny<int>());
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -391,8 +429,8 @@ public class UserServiceTests
             .ReturnsAsync(userWithRoles);
 
         _mockPostRepository
-            .Setup(r => r.GetUserPostsAsync(userId, false))
-            .ReturnsAsync(new List<Post>());
+            .Setup(r => r.GetUserPostsAsync(userId, It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
+            .ReturnsAsync(new PagedResult<Post> { Items = new List<Post>(), PageNumber = 1, PageSize = 20, TotalCount = 0 });
 
         // Act
         var result = await _userService.UpdateUserProfileAsync(userId, request);
