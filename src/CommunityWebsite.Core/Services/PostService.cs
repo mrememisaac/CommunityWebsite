@@ -100,17 +100,17 @@ public class PostService : IPostService
         }
     }
 
-    public async Task<Result<IEnumerable<PostSummaryDto>>> GetFeaturedPostsAsync()
+    public async Task<Result<PagedResult<PostSummaryDto>>> GetFeaturedPostsAsync(int pageNumber = 1, int pageSize = 20)
     {
         try
         {
             _logger.LogInformation("Retrieving featured posts");
 
             // Try to get from cache
-            if (_cache.TryGetValue(FeaturedPostsCacheKey, out IEnumerable<PostSummaryDto>? cachedPosts))
+            if (_cache.TryGetValue(FeaturedPostsCacheKey, out PagedResult<PostSummaryDto>? cachedPosts))
             {
                 _logger.LogDebug("Featured posts retrieved from cache");
-                return Result<IEnumerable<PostSummaryDto>>.Success(cachedPosts!);
+                return Result<PagedResult<PostSummaryDto>>.Success(cachedPosts!);
             }
 
             var posts = await _postRepository.GetTrendingPostsAsync(
@@ -119,61 +119,67 @@ public class PostService : IPostService
 
             var result = posts.Select(p => p.ToSummaryDto()).ToList();
 
+            var pagedResult = new PagedResult<PostSummaryDto> { Items = result, TotalCount = result.Count, PageNumber = pageNumber, PageSize = pageSize };
+
             // Cache the result
-            _cache.Set(FeaturedPostsCacheKey, (IEnumerable<PostSummaryDto>)result, PostCacheOptions);
+            _cache.Set(FeaturedPostsCacheKey, pagedResult, PostCacheOptions);
             _logger.LogDebug("Featured posts cached");
 
-            return Result<IEnumerable<PostSummaryDto>>.Success(result);
+            return Result<PagedResult<PostSummaryDto>>.Success(pagedResult);
         }
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error retrieving featured posts");
-            return Result<IEnumerable<PostSummaryDto>>.Failure("Database error occurred while retrieving featured posts.");
+            return Result<PagedResult<PostSummaryDto>>.Failure("Database error occurred while retrieving featured posts.");
         }
         catch (OperationCanceledException ex)
         {
             _logger.LogWarning(ex, "Request timeout retrieving featured posts");
-            return Result<IEnumerable<PostSummaryDto>>.Failure("Request timeout while retrieving featured posts.");
+            return Result<PagedResult<PostSummaryDto>>.Failure("Request timeout while retrieving featured posts.");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error retrieving featured posts");
-            return Result<IEnumerable<PostSummaryDto>>.Failure("An error occurred while retrieving featured posts.");
+            return Result<PagedResult<PostSummaryDto>>.Failure("An error occurred while retrieving featured posts.");
         }
     }
 
-    public async Task<Result<IEnumerable<PostSummaryDto>>> GetPostsByCategoryAsync(string category, int pageNumber = 1)
+    public async Task<Result<PagedResult<PostSummaryDto>>> GetPostsByCategoryAsync(string category, int pageNumber = 1, int pageSize = 20)
     {
         try
         {
             _logger.LogInformation("Retrieving posts for category {Category}, page {PageNumber}", category, pageNumber);
 
             if (string.IsNullOrWhiteSpace(category))
-                return Result<IEnumerable<PostSummaryDto>>.Failure("Category is required.");
+                return Result<PagedResult<PostSummaryDto>>.Failure("Category is required.");
 
             if (pageNumber < 1)
-                return Result<IEnumerable<PostSummaryDto>>.Failure("Page number must be greater than zero.");
+                return Result<PagedResult<PostSummaryDto>>.Failure("Page number must be greater than zero.");
 
-            var posts = await _postRepository.GetPostsByCategoryAsync(category, pageSize: PaginationDefaults.DefaultPageSize);
-
-            var result = posts.Select(p => p.ToSummaryDto()).ToList();
-
-            return Result<IEnumerable<PostSummaryDto>>.Success(result);
+            var pagedPosts = await _postRepository.GetPostsByCategoryAsync(category, pageNumber, pageSize);
+            var dtoResult = new PagedResult<PostSummaryDto>
+            {
+                Items = pagedPosts.Items.Select(p => p.ToSummaryDto()).ToList(),
+                TotalCount = pagedPosts.TotalCount,
+                PageNumber = pagedPosts.PageNumber,
+                PageSize = pagedPosts.PageSize
+            };
+            return Result<PagedResult<PostSummaryDto>>.Success(dtoResult);
         }
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error retrieving posts for category {Category}", category);
-            return Result<IEnumerable<PostSummaryDto>>.Failure("Database error occurred while retrieving posts.");
+            return Result<PagedResult<PostSummaryDto>>.Failure("Database error occurred while retrieving posts.");
         }
         catch (OperationCanceledException ex)
         {
             _logger.LogWarning(ex, "Request timeout retrieving posts for category {Category}", category);
-            return Result<IEnumerable<PostSummaryDto>>.Failure("Request timeout while retrieving posts.");
+            return Result<PagedResult<PostSummaryDto>>.Failure("Request timeout while retrieving posts.");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error retrieving posts for category {Category}", category);
-            return Result<IEnumerable<PostSummaryDto>>.Failure("An error occurred while retrieving posts.");
+            return Result<PagedResult<PostSummaryDto>>.Failure("An error occurred while retrieving posts.");
         }
     }
 
@@ -303,27 +309,26 @@ public class PostService : IPostService
         }
     }
 
-    public async Task<Result<IEnumerable<PostSummaryDto>>> SearchPostsAsync(string searchTerm)
+    public async Task<Result<PagedResult<PostSummaryDto>>> SearchPostsAsync(string searchTerm, int pageNumber = 1, int pageSize = 20)
     {
         try
         {
             _logger.LogInformation("Searching posts with term: {SearchTerm}", searchTerm);
 
             if (string.IsNullOrWhiteSpace(searchTerm))
-                return Result<IEnumerable<PostSummaryDto>>.Failure("Search term is required.");
+                return Result<PagedResult<PostSummaryDto>>.Failure("Search term is required.");
 
             var cacheKey = $"{SearchResultsCacheKeyPrefix}{searchTerm.ToLower()}";
 
             // Try to get from cache
-            if (_cache.TryGetValue(cacheKey, out IEnumerable<PostSummaryDto>? cachedResults))
+            if (_cache.TryGetValue(cacheKey, out PagedResult<PostSummaryDto>? cachedResults))
             {
                 _logger.LogDebug("Search results for '{SearchTerm}' retrieved from cache", searchTerm);
-                return Result<IEnumerable<PostSummaryDto>>.Success(cachedResults!);
+                return Result<PagedResult<PostSummaryDto>>.Success(cachedResults!);
             }
 
-            var posts = await _postRepository.SearchPostsAsync(searchTerm);
-
-            var result = posts.Select(p => new PostSummaryDto
+            var pagedResult = await _postRepository.SearchPostsAsync(searchTerm);
+            var result = pagedResult.Items.Select(p => new PostSummaryDto
             {
                 Id = p.Id,
                 Title = p.Title,
@@ -334,17 +339,16 @@ public class PostService : IPostService
                 ViewCount = p.ViewCount,
                 CommentCount = p.Comments.Count
             }).ToList();
-
+            var resultPaged = new PagedResult<PostSummaryDto> { Items = result, TotalCount = pagedResult.TotalCount, PageNumber = pagedResult.PageNumber, PageSize = pagedResult.PageSize };
             // Cache the result for 5 minutes
-            _cache.Set(cacheKey, (IEnumerable<PostSummaryDto>)result, SearchCacheOptions);
+            _cache.Set(cacheKey, resultPaged, SearchCacheOptions);
             _logger.LogDebug("Search results for '{SearchTerm}' cached", searchTerm);
-
-            return Result<IEnumerable<PostSummaryDto>>.Success(result);
+            return Result<PagedResult<PostSummaryDto>>.Success(resultPaged);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching posts with term: {SearchTerm}", searchTerm);
-            return Result<IEnumerable<PostSummaryDto>>.Failure("An error occurred while searching posts.");
+            return Result<PagedResult<PostSummaryDto>>.Failure("An error occurred while searching posts.");
         }
     }
 
@@ -408,13 +412,13 @@ public class PostService : IPostService
     /// <summary>
     /// Gets all posts created by a specific user
     /// </summary>
-    public async Task<Result<IEnumerable<PostSummaryDto>>> GetPostsByUserAsync(int userId)
+    public async Task<Result<PagedResult<PostSummaryDto>>> GetPostsByUserAsync(int userId, int pageNumber = 1, int pageSize = 20)
     {
         try
         {
-            var posts = await _postRepository.FindAsync(p => p.AuthorId == userId && !p.IsDeleted);
+            var pagedPosts = await _postRepository.GetUserPostsAsync(userId, pageNumber, pageSize, false);
 
-            var result = posts
+            var result = pagedPosts.Items
                 .OrderByDescending(p => p.CreatedAt)
                 .Select(p => new PostSummaryDto
                 {
@@ -428,12 +432,20 @@ public class PostService : IPostService
                     CommentCount = p.Comments?.Count(c => !c.IsDeleted) ?? 0
                 }).ToList();
 
-            return Result<IEnumerable<PostSummaryDto>>.Success(result);
+            var pagedResult = new PagedResult<PostSummaryDto>
+            {
+                Items = result,
+                TotalCount = pagedPosts.TotalCount,
+                PageNumber = pagedPosts.PageNumber,
+                PageSize = pagedPosts.PageSize
+            };
+
+            return Result<PagedResult<PostSummaryDto>>.Success(pagedResult);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving posts for user {UserId}", userId);
-            return Result<IEnumerable<PostSummaryDto>>.Failure("An error occurred while retrieving posts.");
+            return Result<PagedResult<PostSummaryDto>>.Failure("An error occurred while retrieving posts.");
         }
     }
 }
