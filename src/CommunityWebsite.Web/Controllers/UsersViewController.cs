@@ -26,8 +26,25 @@ public class UsersViewController : Controller
     }
 
     /// <summary>
-    /// Display a user's profile page
+    /// Display list of all users (Members page)
     /// </summary>
+    [HttpGet("/users")]
+    public async Task<IActionResult> Index()
+    {
+        var users = await _userRepository.GetAllAsync();
+        var userDtos = users.Select(u => new UserProfileDto
+        {
+            Id = u.Id,
+            Username = u.Username,
+            Email = u.Email,
+            ProfileImageUrl = u.ProfileImageUrl,
+            CreatedAt = u.CreatedAt
+        }).OrderBy(u => u.Username).ToList();
+
+        return View("~/Views/Users/Index.cshtml", userDtos);
+    }    /// <summary>
+         /// Display a user's profile page
+         /// </summary>
     [HttpGet("/users/{id}")]
     public async Task<IActionResult> Profile(int id)
     {
