@@ -13,22 +13,23 @@
             <p class="lead text-muted">Connect with members of our vibrant community</p>
         </div>
         <div class="col-md-4">
-            <div class="input-group">
-                <input type="text" class="form-control" id="memberSearch" placeholder="Search members by username..." />
-                <button class="btn btn-primary" type="button" id="searchBtn">
+            <form asp-action="Index" method="get" class="input-group">
+                <input type="text" class="form-control" name="search" placeholder="Search members by username..."
+                    value="@ViewBag.Search" />
+                <button class="btn btn-primary" type="submit">
                     <i class="bi bi-search"></i>
                 </button>
-            </div>
+            </form>
         </div>
     </div>
 
     <!-- Members Grid -->
-    <div class="row" id="membersContainer">
-        @if (Model.Any())
-        {
+    @if (Model.Any())
+    {
+        <div class="row" id="membersContainer">
             @foreach (var user in Model)
             {
-                <div class="col-md-6 col-lg-4 mb-4 member-card" data-username="@user.Username.ToLower()">
+                <div class="col-md-6 col-lg-4 mb-4 member-card">
                     <div class="card h-100 shadow-sm hover-shadow">
                         <!-- Profile Header -->
                         <div class="card-body">
@@ -76,72 +77,46 @@
                     </div>
                 </div>
             }
-        }
-        else
-        {
-            <div class="col-12">
-                <div class="alert alert-info text-center py-5">
-                    <i class="bi bi-info-circle me-2" style="font-size: 2rem;"></i>
-                    <p class="mb-0">No members found</p>
-                </div>
-            </div>
-        }
-    </div>
-</div>
+        </div>
 
-<!-- No Results Message (Hidden by default) -->
-<div id="noResults" class="alert alert-warning text-center py-5 d-none" style="margin: 40px;">
-    <i class="bi bi-search me-2" style="font-size: 2rem;"></i>
-    <p class="mb-0">No members match your search</p>
+        <!-- Pagination -->
+        @if (ViewBag.TotalPages > 1)
+        {
+            <nav aria-label="Member pagination">
+                <ul class="pagination justify-content-center mt-5">
+                    <li class="page-item @(ViewBag.CurrentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@(ViewBag.CurrentPage - 1)"
+                            asp-route-search="@ViewBag.Search">Previous</a>
+                    </li>
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-search="@ViewBag.Search">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@(ViewBag.CurrentPage + 1)"
+                            asp-route-search="@ViewBag.Search">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="col-12">
+            <div class="alert alert-info text-center py-5">
+                <i class="bi bi-info-circle me-2" style="font-size: 2rem;"></i>
+                <p class="mb-0">No members found</p>
+            </div>
+        </div>
+    }
 </div>
 
 @section Scripts {
     <script>
         $(document).ready(function () {
-            const searchInput = $('#memberSearch');
-            const searchBtn = $('#searchBtn');
-            const noResults = $('#noResults');
-
-            // Search functionality
-            function filterMembers() {
-                const searchTerm = searchInput.val().toLowerCase().trim();
-                const memberCards = $('.member-card');
-                let visibleCount = 0;
-
-                if (searchTerm === '') {
-                    memberCards.show();
-                    noResults.addClass('d-none');
-                    visibleCount = memberCards.length;
-                } else {
-                    memberCards.each(function () {
-                        const username = $(this).data('username');
-                        if (username.includes(searchTerm)) {
-                            $(this).show();
-                            visibleCount++;
-                        } else {
-                            $(this).hide();
-                        }
-                    });
-
-                    if (visibleCount === 0) {
-                        noResults.removeClass('d-none');
-                    } else {
-                        noResults.addClass('d-none');
-                    }
-                }
-            }
-
-            // Real-time search
-            searchInput.on('keyup', filterMembers);
-            searchBtn.on('click', filterMembers);
-
-            // Enter key search
-            searchInput.on('keypress', function (e) {
-                if (e.which === 13) {
-                    e.preventDefault();
-                    filterMembers();
-                }
-            });
+            // Form submission handled by asp-action
         });
     </script>
 }
