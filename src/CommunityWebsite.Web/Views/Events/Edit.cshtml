@@ -154,13 +154,13 @@
 
                 $('#submitBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
 
-                apiRequest(`/api/events/${eventId}`, 'PUT', {
+                apiPut(`/events/${eventId}`, {
                     title: title,
                     date: eventDateTime.toISOString(),
                     location: location || null,
                     description: description || null
-                }).then(function (result) {
-                    if (result.isSuccess) {
+                }).then(function (result, textStatus, jqXHR) {
+                    if (jqXHR.status === 200 && result) {
                         showToast('Event updated successfully!', 'success');
                         window.location.href = '/Events/Details/' + eventId;
                     } else {
