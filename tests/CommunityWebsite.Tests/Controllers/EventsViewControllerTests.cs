@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using CommunityWebsite.Web.Controllers;
 using CommunityWebsite.Core.Services.Interfaces;
 using CommunityWebsite.Core.DTOs.Responses;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.Common;
 
 namespace CommunityWebsite.Tests.Controllers;
@@ -60,9 +61,15 @@ public class EventsViewControllerTests
             new() { Id = 1, Title = "Event 1", Date = DateTime.UtcNow.AddDays(7) },
             new() { Id = 2, Title = "Event 2", Date = DateTime.UtcNow.AddDays(14) }
         };
-
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(events));
+        var pagedEvents = new PagedResult<EventDto>
+        {
+            Items = events,
+            PageNumber = 1,
+            PageSize = 1,
+            TotalCount = events.Count
+        };
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(pagedEvents));
 
         // Act
         var result = await _controller.Index();
@@ -78,29 +85,41 @@ public class EventsViewControllerTests
     public async Task Index_WithUpcomingPeriod_CallsGetUpcomingEvents()
     {
         // Arrange
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(new List<EventDto>()));
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(new PagedResult<EventDto>
+            {
+                Items = new List<EventDto>(),
+                PageNumber = 1,
+                PageSize = 1,
+                TotalCount = 0
+            }));
 
         // Act
         await _controller.Index(period: "upcoming");
 
         // Assert
-        _mockEventService.Verify(s => s.GetUpcomingEventsAsync(100), Times.Once);
-        _mockEventService.Verify(s => s.GetPastEventsAsync(It.IsAny<int>()), Times.Never);
+        _mockEventService.Verify(s => s.GetUpcomingEventsAsync(100, It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+        _mockEventService.Verify(s => s.GetPastEventsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 
     [Fact]
     public async Task Index_WithPastPeriod_CallsGetPastEvents()
     {
         // Arrange
-        _mockEventService.Setup(s => s.GetPastEventsAsync(100))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(new List<EventDto>()));
+        _mockEventService.Setup(s => s.GetPastEventsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(new PagedResult<EventDto>
+            {
+                Items = new List<EventDto>(),
+                PageNumber = 1,
+                PageSize = 1,
+                TotalCount = 0
+            }));
 
         // Act
         await _controller.Index(period: "past");
 
         // Assert
-        _mockEventService.Verify(s => s.GetPastEventsAsync(100), Times.Once);
+        _mockEventService.Verify(s => s.GetPastEventsAsync(100, It.IsAny<int>(), It.IsAny<int>()), Times.Once);
     }
 
     [Fact]
@@ -113,8 +132,14 @@ public class EventsViewControllerTests
             new() { Id = 2, Title = "Meetup", Description = "Community meetup", Date = DateTime.UtcNow.AddDays(14) }
         };
 
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(events));
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(new PagedResult<EventDto>
+            {
+                Items = events,
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = events.Count
+            }));
 
         // Act
         var result = await _controller.Index(search: "conference");
@@ -136,8 +161,14 @@ public class EventsViewControllerTests
             new() { Id = 2, Title = "Event 2", Location = "Los Angeles", Date = DateTime.UtcNow.AddDays(14) }
         };
 
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(events));
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(new PagedResult<EventDto>
+            {
+                Items = events,
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = events.Count
+            }));
 
         // Act
         var result = await _controller.Index(search: "New York");
@@ -159,8 +190,14 @@ public class EventsViewControllerTests
             new() { Id = 2, Title = "Sooner Event", Date = DateTime.UtcNow.AddDays(7) }
         };
 
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(events));
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(new PagedResult<EventDto>
+            {
+                Items = events,
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = events.Count
+            }));
 
         // Act
         var result = await _controller.Index(sortBy: "date-asc");
@@ -181,8 +218,14 @@ public class EventsViewControllerTests
             new() { Id = 2, Title = "Later Event", Date = DateTime.UtcNow.AddDays(14) }
         };
 
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(events));
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(new PagedResult<EventDto>
+            {
+                Items = events,
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = events.Count
+            }));
 
         // Act
         var result = await _controller.Index(sortBy: "date-desc");
@@ -203,8 +246,14 @@ public class EventsViewControllerTests
             new() { Id = 2, Title = "Alpha Event", Date = DateTime.UtcNow.AddDays(14) }
         };
 
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(events));
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(new PagedResult<EventDto>
+            {
+                Items = events,
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = events.Count
+            }));
 
         // Act
         var result = await _controller.Index(sortBy: "title");
@@ -219,8 +268,14 @@ public class EventsViewControllerTests
     public async Task Index_SetsViewBagProperties_Correctly()
     {
         // Arrange
-        _mockEventService.Setup(s => s.GetPastEventsAsync(100))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(new List<EventDto>()));
+        _mockEventService.Setup(s => s.GetPastEventsAsync(100, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(new PagedResult<EventDto>
+            {
+                Items = new List<EventDto>(),
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = 0
+            }));
 
         // Act
         await _controller.Index(search: "test", period: "past", sortBy: "title", page: 2);
@@ -239,8 +294,14 @@ public class EventsViewControllerTests
         var events = Enumerable.Range(1, 20).Select(i =>
             new EventDto { Id = i, Title = $"Event {i}", Date = DateTime.UtcNow.AddDays(i) }).ToList();
 
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Success(events));
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Success(new PagedResult<EventDto>
+            {
+                Items = events,
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = events.Count
+            }));
 
         // Act
         var result = await _controller.Index(page: 2);
@@ -256,8 +317,8 @@ public class EventsViewControllerTests
     public async Task Index_WhenServiceFails_ReturnsEmptyList()
     {
         // Arrange
-        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100))
-            .ReturnsAsync(Result<IEnumerable<EventDto>>.Failure("Service unavailable"));
+        _mockEventService.Setup(s => s.GetUpcomingEventsAsync(100, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<EventDto>>.Failure("Service unavailable"));
 
         // Act
         var result = await _controller.Index();
