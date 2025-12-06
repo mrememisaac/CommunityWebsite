@@ -3,7 +3,7 @@ namespace CommunityWebsite.Core.DTOs.Responses;
 /// <summary>
 /// Extended comment DTO with replies for nested display
 /// </summary>
-public class CommentDetailDto : ApiResponseBase
+public class CommentDetailDto
 {
     public int Id { get; set; }
     public string Content { get; set; } = string.Empty;

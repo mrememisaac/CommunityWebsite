@@ -3,7 +3,7 @@ namespace CommunityWebsite.Core.DTOs.Responses;
 /// <summary>
 /// Detailed post DTO with content and comments
 /// </summary>
-public class PostDetailDto : ApiResponseBase
+public class PostDetailDto
 {
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;

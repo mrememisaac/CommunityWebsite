@@ -3,7 +3,7 @@ namespace CommunityWebsite.Core.DTOs.Responses;
 /// <summary>
 /// Simple user DTO for view models
 /// </summary>
-public class UserDto : ApiResponseBase
+public class UserDto
 {
     public int Id { get; set; }
     public string Username { get; set; } = string.Empty;

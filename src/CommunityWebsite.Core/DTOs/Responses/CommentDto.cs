@@ -3,7 +3,7 @@ namespace CommunityWebsite.Core.DTOs.Responses;
 /// <summary>
 /// Comment DTO for API responses
 /// </summary>
-public class CommentDto : ApiResponseBase
+public class CommentDto
 {
     public int Id { get; set; }
     public string Content { get; set; } = string.Empty;

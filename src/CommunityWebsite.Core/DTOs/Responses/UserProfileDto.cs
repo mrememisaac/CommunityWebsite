@@ -3,7 +3,7 @@ namespace CommunityWebsite.Core.DTOs.Responses;
 /// <summary>
 /// Detailed user profile DTO
 /// </summary>
-public class UserProfileDto : ApiResponseBase
+public class UserProfileDto
 {
     public int Id { get; set; }
     public string Username { get; set; } = string.Empty;
