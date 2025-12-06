@@ -1,3 +1,4 @@
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.Models;
 
 namespace CommunityWebsite.Core.Repositories.Interfaces;
@@ -7,7 +8,7 @@ namespace CommunityWebsite.Core.Repositories.Interfaces;
 /// </summary>
 public interface IEventRepository : IRepository<Event>
 {
-    Task<IEnumerable<Event>> GetUpcomingEventsAsync(int limit = 20);
-    Task<IEnumerable<Event>> GetPastEventsAsync(int limit = 20);
-    Task<IEnumerable<Event>> GetEventsByOrganizerAsync(int userId);
+    Task<PagedResult<Event>> GetUpcomingEventsAsync(int pageNumber = 1, int pageSize = 20);
+    Task<PagedResult<Event>> GetPastEventsAsync(int pageNumber = 1, int pageSize = 20);
+    Task<PagedResult<Event>> GetEventsByOrganizerAsync(int userId, int pageNumber = 1, int pageSize = 20);
 }

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using CommunityWebsite.Core.Data;
 using CommunityWebsite.Core.Models;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.Repositories.Interfaces;
 
 namespace CommunityWebsite.Core.Repositories;
@@ -14,34 +15,67 @@ public class EventRepository : GenericRepository<Event>, IEventRepository
     {
     }
 
-    public async Task<IEnumerable<Event>> GetUpcomingEventsAsync(int limit = 20)
+    public async Task<PagedResult<Event>> GetUpcomingEventsAsync(int pageNumber = 1, int pageSize = 20)
     {
-        return await _dbSet
-            .Where(e => e.StartDate > DateTime.UtcNow && !e.IsCancelled)
+        var query = _dbSet.Where(e => e.StartDate > DateTime.UtcNow && !e.IsCancelled);
+        var totalCount = await query.CountAsync();
+        var skip = (pageNumber - 1) * pageSize;
+        var items = await query
             .OrderBy(e => e.StartDate)
-            .Take(limit)
+            .Skip(skip)
+            .Take(pageSize)
             .Include(e => e.Organizer)
             .AsNoTracking()
             .ToListAsync();
+        return new PagedResult<Event>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
-    public async Task<IEnumerable<Event>> GetPastEventsAsync(int limit = 20)
+    public async Task<PagedResult<Event>> GetPastEventsAsync(int pageNumber = 1, int pageSize = 20)
     {
-        return await _dbSet
-            .Where(e => e.StartDate <= DateTime.UtcNow)
+        var query = _dbSet.Where(e => e.StartDate <= DateTime.UtcNow);
+        var totalCount = await query.CountAsync();
+        var skip = (pageNumber - 1) * pageSize;
+        var items = await query
             .OrderByDescending(e => e.StartDate)
-            .Take(limit)
+            .Skip(skip)
+            .Take(pageSize)
             .Include(e => e.Organizer)
             .AsNoTracking()
             .ToListAsync();
+        return new PagedResult<Event>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
-    public async Task<IEnumerable<Event>> GetEventsByOrganizerAsync(int userId)
+    public async Task<PagedResult<Event>> GetEventsByOrganizerAsync(int userId, int pageNumber = 1, int pageSize = 0)
     {
-        return await _dbSet
-            .Where(e => e.OrganizerId == userId)
+        if (pageSize <= 0)
+            pageSize = 20;
+        var skip = (pageNumber - 1) * pageSize;
+        var query = _dbSet.Where(e => e.OrganizerId == userId);
+        var totalCount = await query.CountAsync();
+        var items = await query
             .OrderByDescending(e => e.StartDate)
+            .Skip(skip)
+            .Take(pageSize)
             .AsNoTracking()
             .ToListAsync();
+        return new PagedResult<Event>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 }
