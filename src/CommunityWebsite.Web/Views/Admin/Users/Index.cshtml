@@ -117,6 +117,30 @@
             }
         </div>
     }
+
+    <!-- Pagination -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav aria-label="User pagination" class="mt-4">
+            <ul class="pagination">
+                <li class="page-item @(ViewBag.PageNumber <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@(ViewBag.PageNumber - 1)"
+                        asp-route-searchTerm="@ViewBag.SearchTerm">Previous</a>
+                </li>
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(ViewBag.PageNumber == i ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@i"
+                            asp-route-searchTerm="@ViewBag.SearchTerm">@i</a>
+                    </li>
+                }
+                <li class="page-item @(ViewBag.PageNumber >= ViewBag.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@(ViewBag.PageNumber + 1)"
+                        asp-route-searchTerm="@ViewBag.SearchTerm">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
 </div>
 
 <script>
