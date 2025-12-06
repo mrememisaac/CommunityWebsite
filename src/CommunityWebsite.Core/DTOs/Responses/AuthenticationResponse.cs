@@ -3,7 +3,7 @@ namespace CommunityWebsite.Core.DTOs.Responses;
 /// <summary>
 /// Authentication response DTO
 /// </summary>
-public class AuthenticationResponse
+public class AuthenticationResponse : ApiResponseBase
 {
     public int UserId { get; set; }
     public string Username { get; set; } = string.Empty;

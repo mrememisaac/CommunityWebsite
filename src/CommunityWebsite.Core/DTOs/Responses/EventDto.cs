@@ -3,7 +3,7 @@ namespace CommunityWebsite.Core.DTOs.Responses;
 /// <summary>
 /// Event DTO for API responses
 /// </summary>
-public class EventDto
+public class EventDto : ApiResponseBase
 {
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;

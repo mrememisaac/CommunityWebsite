@@ -3,7 +3,7 @@ namespace CommunityWebsite.Core.DTOs.Responses;
 /// <summary>
 /// DTO for displaying admin user list
 /// </summary>
-public class AdminUserDto
+public class AdminUserDto : ApiResponseBase
 {
     /// <summary>User ID</summary>
     public int Id { get; set; }
@@ -36,7 +36,7 @@ public class AdminUserDto
 /// <summary>
 /// DTO for displaying detailed admin user information
 /// </summary>
-public class AdminUserDetailDto
+public class AdminUserDetailDto : ApiResponseBase
 {
     /// <summary>User ID</summary>
     public int Id { get; set; }
