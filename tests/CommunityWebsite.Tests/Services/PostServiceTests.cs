@@ -2,6 +2,7 @@ using Xunit;
 using FluentAssertions;
 using Moq;
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Requests;
 using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Models;
@@ -312,14 +313,14 @@ public class PostServiceTests
 
         _mockPostRepository
             .Setup(r => r.SearchPostsAsync(searchTerm))
-            .ReturnsAsync(posts);
+            .ReturnsAsync(new PagedResult<Post> { Items = posts, TotalCount = posts.Count, PageNumber = 1, PageSize = 20 });
 
         // Act
         var result = await _postService.SearchPostsAsync(searchTerm);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().HaveCount(2);
+        result.Data!.Items.Should().HaveCount(2);
         result.ErrorMessage.Should().BeNull();
     }
 
