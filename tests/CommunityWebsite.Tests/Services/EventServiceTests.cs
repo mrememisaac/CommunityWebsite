@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using CommunityWebsite.Core.DTOs;
 
 namespace CommunityWebsite.Tests.Services;
 
@@ -177,8 +178,8 @@ public class EventServiceTests : IDisposable
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().HaveCount(1);
-        result.Data!.First().Title.Should().Be("Future Event");
+        result.Data!.Items.Should().HaveCount(1);
+        result.Data.Items.First().Title.Should().Be("Future Event");
     }
 
     [Fact]
@@ -192,11 +193,11 @@ public class EventServiceTests : IDisposable
         }
 
         // Act
-        var result = await _eventService.GetUpcomingEventsAsync(3);
+        var result = await _eventService.GetUpcomingEventsAsync(limit: 3);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().HaveCount(3);
+        result.Data!.Items.Should().HaveCount(3);
     }
 
     #endregion
@@ -243,8 +244,8 @@ public class EventServiceTests : IDisposable
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().HaveCount(1);
-        result.Data!.First().Title.Should().Be("Past Event");
+        result.Data!.Items.Should().HaveCount(1);
+        result.Data.Items.First().Title.Should().Be("Past Event");
     }
 
     #endregion
@@ -266,8 +267,8 @@ public class EventServiceTests : IDisposable
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().HaveCount(1);
-        result.Data!.First().Title.Should().Be("Organizer 1 Event");
+        result.Data!.Items.Should().HaveCount(1);
+        result.Data.Items.First().Title.Should().Be("Organizer 1 Event");
     }
 
     [Fact]
