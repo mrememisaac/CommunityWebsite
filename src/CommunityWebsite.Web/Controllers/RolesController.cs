@@ -33,11 +33,9 @@ public class RolesController : ApiControllerBase
     {
         _logger.LogInformation("GET /api/roles");
 
-        var result = await _roleService.GetAllRolesAsync();
-
+        var result = await _roleService.GetAllRolesAsync(pageNumber: 1, pageSize: 20);
         if (!result.IsSuccess)
             return BadRequest(new { error = result.ErrorMessage });
-
         return Ok(result.Data);
     }
 
@@ -87,11 +85,9 @@ public class RolesController : ApiControllerBase
     {
         _logger.LogInformation("GET /api/roles/{RoleId}/users", id);
 
-        var result = await _roleService.GetUsersInRoleAsync(id);
-
+        var result = await _roleService.GetUsersInRoleAsync(id, pageNumber: 1, pageSize: 20);
         if (!result.IsSuccess)
             return NotFound(new { error = result.ErrorMessage });
-
         return Ok(result.Data);
     }
 
@@ -105,11 +101,9 @@ public class RolesController : ApiControllerBase
     {
         _logger.LogInformation("GET /api/roles/name/{RoleName}/users", name);
 
-        var result = await _roleService.GetUsersInRoleByNameAsync(name);
-
+        var result = await _roleService.GetUsersInRoleByNameAsync(name, pageNumber: 1, pageSize: 20);
         if (!result.IsSuccess)
             return NotFound(new { error = result.ErrorMessage });
-
         return Ok(result.Data);
     }
 
