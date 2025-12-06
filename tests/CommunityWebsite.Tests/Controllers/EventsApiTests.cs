@@ -237,7 +237,7 @@ public class EventsApiTests : ApiTestBase
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadAsStringAsync();
         var doc = JsonDocument.Parse(json);
-        doc.RootElement.GetArrayLength().Should().BeGreaterThan(0);
+        doc.RootElement.GetProperty("items").GetArrayLength().Should().BeGreaterThan(0);
     }
 
     [Fact]
