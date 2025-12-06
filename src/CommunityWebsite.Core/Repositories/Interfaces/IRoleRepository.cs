@@ -1,3 +1,4 @@
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.Models;
 
 namespace CommunityWebsite.Core.Repositories.Interfaces;
@@ -8,7 +9,7 @@ namespace CommunityWebsite.Core.Repositories.Interfaces;
 public interface IRoleRepository : IRepository<Role>
 {
     Task<Role?> GetRoleByNameAsync(string name);
-    Task<IEnumerable<Role>> GetAllRolesWithUsersAsync();
+    Task<PagedResult<Role>> GetAllRolesWithUsersAsync(int pageNumber = 1, int pageSize = 20);
     Task<bool> RoleExistsAsync(string name);
-    Task<IEnumerable<User>> GetUsersInRoleAsync(int roleId);
+    Task<PagedResult<User>> GetUsersInRoleAsync(int roleId, int pageNumber = 1, int pageSize = 20);
 }
