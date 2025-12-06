@@ -1,0 +1,165 @@
+@model IEnumerable<UserProfileDto>
+@{
+    ViewData["Title"] = "Community Members";
+}
+
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5">
+                <i class="bi bi-people me-2 text-primary"></i>Community Members
+            </h1>
+            <p class="lead text-muted">Connect with members of our vibrant community</p>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <input type="text" class="form-control" id="memberSearch" placeholder="Search members by username..." />
+                <button class="btn btn-primary" type="button" id="searchBtn">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Members Grid -->
+    <div class="row" id="membersContainer">
+        @if (Model.Any())
+        {
+            @foreach (var user in Model)
+            {
+                <div class="col-md-6 col-lg-4 mb-4 member-card" data-username="@user.Username.ToLower()">
+                    <div class="card h-100 shadow-sm hover-shadow">
+                        <!-- Profile Header -->
+                        <div class="card-body">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="flex-shrink-0">
+                                    @if (!string.IsNullOrEmpty(user.ProfileImageUrl))
+                                    {
+                                        <img src="@user.ProfileImageUrl" alt="@user.Username" class="rounded-circle" width="60"
+                                            height="60" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                            style="width: 60px; height: 60px; font-size: 24px; font-weight: bold;">
+                                            @user.Username.First()
+                                        </div>
+                                    }
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5 class="card-title mb-0">
+                                        <a href="@Url.Action("Profile", "UsersView", new { id = user.Id })"
+                                            class="text-decoration-none">
+                                            @user.Username
+                                        </a>
+                                    </h5>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        Joined @user.CreatedAt.ToShortDateString()
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Email -->
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-envelope me-1"></i>
+                                @user.Email
+                            </p>
+
+                            <!-- Action Button -->
+                            <a href="@Url.Action("Profile", "UsersView", new { id = user.Id })"
+                                class="btn btn-sm btn-outline-primary w-100">
+                                <i class="bi bi-person-check me-1"></i>View Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert alert-info text-center py-5">
+                    <i class="bi bi-info-circle me-2" style="font-size: 2rem;"></i>
+                    <p class="mb-0">No members found</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- No Results Message (Hidden by default) -->
+<div id="noResults" class="alert alert-warning text-center py-5 d-none" style="margin: 40px;">
+    <i class="bi bi-search me-2" style="font-size: 2rem;"></i>
+    <p class="mb-0">No members match your search</p>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const searchInput = $('#memberSearch');
+            const searchBtn = $('#searchBtn');
+            const noResults = $('#noResults');
+
+            // Search functionality
+            function filterMembers() {
+                const searchTerm = searchInput.val().toLowerCase().trim();
+                const memberCards = $('.member-card');
+                let visibleCount = 0;
+
+                if (searchTerm === '') {
+                    memberCards.show();
+                    noResults.addClass('d-none');
+                    visibleCount = memberCards.length;
+                } else {
+                    memberCards.each(function () {
+                        const username = $(this).data('username');
+                        if (username.includes(searchTerm)) {
+                            $(this).show();
+                            visibleCount++;
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+
+                    if (visibleCount === 0) {
+                        noResults.removeClass('d-none');
+                    } else {
+                        noResults.addClass('d-none');
+                    }
+                }
+            }
+
+            // Real-time search
+            searchInput.on('keyup', filterMembers);
+            searchBtn.on('click', filterMembers);
+
+            // Enter key search
+            searchInput.on('keypress', function (e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    filterMembers();
+                }
+            });
+        });
+    </script>
+}
+
+<style>
+    .hover-shadow {
+        transition: box-shadow 0.3s ease;
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .member-card {
+        transition: transform 0.2s ease;
+    }
+
+    .member-card:hover {
+        transform: translateY(-2px);
+    }
+</style>
