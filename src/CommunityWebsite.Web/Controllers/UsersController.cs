@@ -16,15 +16,18 @@ public class UsersController : ApiControllerBase
 {
     private readonly IUserRepository _userRepository;
     private readonly IPostRepository _postRepository;
+    private readonly IUserService _userService;
     private readonly ILogger<UsersController> _logger;
 
     public UsersController(
         IUserRepository userRepository,
         IPostRepository postRepository,
+        IUserService userService,
         ILogger<UsersController> logger)
     {
         _userRepository = userRepository;
         _postRepository = postRepository;
+        _userService = userService;
         _logger = logger;
     }
 
@@ -64,13 +67,10 @@ public class UsersController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<UserSummaryDto>>> GetUsersByRole(string roleName)
     {
-        var users = await _userRepository.GetUsersByRoleAsync(roleName);
-
-        return Ok(users.Select(u => new UserSummaryDto
-        {
-            Id = u.Id,
-            Username = u.Username
-        }));
+        var result = await _userService.GetUsersByRoleAsync(roleName, pageNumber: 1, pageSize: 20);
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+        return Ok(result.Data);
     }
 
     /// <summary>
@@ -83,13 +83,10 @@ public class UsersController : ApiControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20)
     {
-        var users = await _userRepository.GetActiveUsersAsync(pageNumber, pageSize);
-
-        return Ok(users.Select(u => new UserSummaryDto
-        {
-            Id = u.Id,
-            Username = u.Username
-        }));
+        var result = await _userService.GetActiveUsersAsync(pageNumber, pageSize);
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+        return Ok(result.Data);
     }
 
     /// <summary>
