@@ -3,6 +3,7 @@ using CommunityWebsite.Core.Constants;
 using CommunityWebsite.Core.Data;
 using CommunityWebsite.Core.Models;
 using CommunityWebsite.Core.Repositories.Interfaces;
+using CommunityWebsite.Core.DTOs;
 
 namespace CommunityWebsite.Core.Repositories;
 
@@ -36,16 +37,27 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             .FirstOrDefaultAsync();
     }
 
-    public async Task<IEnumerable<User>> GetUsersByRoleAsync(string roleName)
+    public async Task<PagedResult<User>> GetUsersByRoleAsync(string roleName, int pageNumber = 1, int pageSize = 0)
     {
+        if (pageSize <= 0)
+            pageSize = PaginationDefaults.DefaultPageSize;
+        var skip = (pageNumber - 1) * pageSize;
         var normalizedRole = roleName.ToLower();
-        return await _dbSet
+        var query = _dbSet
             .Where(u => u.IsActive &&
-                   u.UserRoles.Any(ur => ur.Role.Name.ToLower() == normalizedRole))
+                u.UserRoles.Any(ur => ur.Role.Name.ToLower() == normalizedRole))
             .Include(u => u.UserRoles)
             .ThenInclude(ur => ur.Role)
-            .AsNoTracking()
-            .ToListAsync();
+            .OrderByDescending(u => u.CreatedAt);
+        var totalCount = await query.CountAsync();
+        var items = await query.Skip(skip).Take(pageSize).AsNoTracking().ToListAsync();
+        return new PagedResult<User>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
     public async Task<bool> UserExistsAsync(string email)
@@ -53,41 +65,37 @@ public class UserRepository : GenericRepository<User>, IUserRepository
         return await _dbSet.AnyAsync(u => u.Email == email && u.IsActive);
     }
 
-    public async Task<IEnumerable<User>> GetActiveUsersAsync(int pageNumber = 1, int pageSize = 0)
+    public async Task<PagedResult<User>> GetActiveUsersAsync(int pageNumber = 1, int pageSize = 0)
     {
         if (pageSize <= 0)
             pageSize = PaginationDefaults.DefaultPageSize;
 
         var skip = (pageNumber - 1) * pageSize;
 
-        return await _dbSet
+        var query = _dbSet
             .Where(u => u.IsActive)
             .OrderByDescending(u => u.CreatedAt)
-            .ThenBy(u => u.Username)
-            .Skip(skip)
-            .Take(pageSize)
-            .AsNoTracking()
-            .ToListAsync();
+            .ThenBy(u => u.Username);
+        var totalCount = await query.CountAsync();
+        var items = await query.Skip(skip).Take(pageSize).AsNoTracking().ToListAsync();
+        return new PagedResult<User>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
-    public async Task<IEnumerable<User>> GetAllUsersAsync()
-    {
-        return await _dbSet
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
-            .OrderByDescending(u => u.CreatedAt)
-            .AsNoTracking()
-            .ToListAsync();
-    }
+
+
+
 
     /// <summary>
     /// Gets users with pagination and optional search.
     /// Includes post and comment counts via efficient SQL queries.
     /// </summary>
-    public async Task<(IEnumerable<User> Users, int TotalCount)> GetUsersWithStatsAsync(
-        int pageNumber,
-        int pageSize,
-        string? searchTerm = null)
+    public async Task<PagedResult<User>> GetUsersWithStatsAsync(int pageNumber, int pageSize, string? searchTerm)
     {
         var query = _dbSet.AsQueryable();
 
@@ -105,7 +113,7 @@ public class UserRepository : GenericRepository<User>, IUserRepository
 
         // Apply pagination with includes
         var skip = (pageNumber - 1) * pageSize;
-        var users = await query
+        var items = await query
             .Include(u => u.UserRoles)
             .ThenInclude(ur => ur.Role)
             .OrderByDescending(u => u.CreatedAt)
@@ -114,6 +122,12 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             .AsNoTracking()
             .ToListAsync();
 
-        return (users, totalCount);
+        return new PagedResult<User>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 }
