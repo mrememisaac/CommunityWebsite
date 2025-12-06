@@ -82,9 +82,9 @@
 
                         <!-- Comments List -->
                         <div id="commentsList">
-                            @if (ViewBag.Comments != null && ((IEnumerable<CommentDto>)ViewBag.Comments).Any())
+                            @if (ViewBag.Comments != null && ViewBag.Comments.Items != null && ((IEnumerable<CommentDto>)ViewBag.Comments.Items).Any())
                             {
-                                foreach (var comment in (IEnumerable<CommentDto>)ViewBag.Comments)
+                                foreach (var comment in (IEnumerable<CommentDto>)ViewBag.Comments.Items)
                                 {
                                     <div class="comment mb-3 p-3 bg-light rounded" data-comment-id="@comment.Id">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
@@ -118,6 +118,31 @@
                                 </div>
                             }
                         </div>
+
+                        <!-- Pagination Controls -->
+                        @if (ViewBag.Comments != null && ViewBag.Comments.TotalCount > ViewBag.Comments.PageSize)
+                        {
+                            var pageNumber = (int)ViewBag.Comments.PageNumber;
+                            var pageSize = (int)ViewBag.Comments.PageSize;
+                            var totalCount = (int)ViewBag.Comments.TotalCount;
+                            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+                        <nav aria-label="Comments pagination">
+                            <ul class="pagination justify-content-center mt-3">
+                                <li class="page-item @(pageNumber == 1 ? "disabled" : "")">
+                                    <a class="page-link" href="#" onclick="loadCommentsPage(@(pageNumber - 1)); return false;">Previous</a>
+                                </li>
+                                @for (var i = 1; i <= totalPages; i++)
+                                {
+                                    <li class="page-item @(i == pageNumber ? "active" : "")">
+                                        <a class="page-link" href="#" onclick="loadCommentsPage(@i); return false;">@i</a>
+                                    </li>
+                                }
+                                <li class="page-item @(pageNumber == totalPages ? "disabled" : "")">
+                                    <a class="page-link" href="#" onclick="loadCommentsPage(@(pageNumber + 1)); return false;">Next</a>
+                                </li>
+                            </ul>
+                        </nav>
+                        }
                     </div>
                 </div>
             </div>
@@ -168,7 +193,6 @@
 @section Scripts {
     <script>
         const isAuthenticated = isLoggedIn();
-
         const postId = @(Model?.Id ?? 0);
         const postAuthorId = @(Model?.AuthorId ?? 0);
 
@@ -201,14 +225,14 @@
                 e.preventDefault();
                 const content = $('#commentContent').val().trim();
                 if (!content) return;
-                console.log({content, authorId: currentUserId, parentCommentId: 0});
                 apiPost(`/posts/${postId}/comments`, {
                     content: content,
                     authorId: currentUserId,
                 }).then(function(result, textStatus, jqXHR) {
                     if (jqXHR.status === 201 && result) {
                         showToast('Comment posted successfully!', 'success');
-                        location.reload();
+                        loadCommentsPage(1); // Reload first page after posting
+                        $('#commentContent').val('');
                     } else {
                         showToast(result.errors?.join(', ') || 'Failed to post comment', 'danger');
                     }
@@ -218,11 +242,63 @@
             });
         });
 
+        function loadCommentsPage(page) {
+            $.get(`/api/posts/${postId}/comments?pageNumber=${page}&pageSize=10`, function(data) {
+                if (!data || !data.items) return;
+                let html = "";
+                if (data.items.length > 0) {
+                    for (const comment of data.items) {
+                        html += `<div class='comment mb-3 p-3 bg-light rounded' data-comment-id='${comment.id}'>
+                            <div class='d-flex justify-content-between align-items-start mb-2'>
+                                <div class='d-flex align-items-center'>
+                                    <a href='/Users/Profile/${comment.authorId}' class='text-decoration-none'>
+                                        <div class='author-avatar-sm bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2'>
+                                            ${(comment.authorUsername || "?").charAt(0).toUpperCase()}
+                                        </div>
+                                    </a>
+                                    <div>
+                                        <a href='/Users/Profile/${comment.authorId}' class='text-decoration-none text-dark'>
+                                            <strong>${comment.authorUsername}</strong>
+                                        </a><br>
+                                        <small class='text-muted'>${new Date(comment.createdAt).toLocaleString()}</small>
+                                    </div>
+                                </div>
+                                <div class='comment-actions'></div>
+                            </div>
+                            <p class='mb-0'>${comment.content}</p>
+                        </div>`;
+                    }
+                } else {
+                    html = `<div class='text-center text-muted py-4' id='noCommentsMessage'>
+                        <i class='bi bi-chat display-4'></i>
+                        <p class='mt-2'>No comments yet. Be the first to comment!</p>
+                    </div>`;
+                }
+                $('#commentsList').html(html);
+
+                // Pagination controls
+                let totalPages = Math.ceil(data.totalCount / data.pageSize);
+                let paginationHtml = "";
+                if (totalPages > 1) {
+                    paginationHtml += `<nav aria-label='Comments pagination'><ul class='pagination justify-content-center mt-3'>`;
+                    paginationHtml += `<li class='page-item ${data.pageNumber === 1 ? "disabled" : ""}'>
+                        <a class='page-link' href='#' onclick='loadCommentsPage(${data.pageNumber - 1}); return false;'>Previous</a></li>`;
+                    for (let i = 1; i <= totalPages; i++) {
+                        paginationHtml += `<li class='page-item ${i === data.pageNumber ? "active" : ""}'>
+                            <a class='page-link' href='#' onclick='loadCommentsPage(${i}); return false;'>${i}</a></li>`;
+                    }
+                    paginationHtml += `<li class='page-item ${data.pageNumber === totalPages ? "disabled" : ""}'>
+                        <a class='page-link' href='#' onclick='loadCommentsPage(${data.pageNumber + 1}); return false;'>Next</a></li>`;
+                    paginationHtml += `</ul></nav>`;
+                }
+                $('#commentsList').append(paginationHtml);
+            });
+        }
+
         function deletePost() {
             if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
                 return;
             }
-
             apiDelete(`/posts/${postId}`)
                 .then(function(result, textStatus, jqXHR) {
                     if (jqXHR.status === 204) {
