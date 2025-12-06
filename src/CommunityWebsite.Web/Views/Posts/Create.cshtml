@@ -116,16 +116,8 @@
 
 @section Scripts {
     <script>
-        function isAuthenticated() {
-            return @User.Identity.IsAuthenticated.ToString().ToLower();
-        }
-
         $(document).ready(function () {
-            // Check authentication
-            if (!isAuthenticated()) {
-                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
-                return;
-            }
+            //requireLogin();
 
             const previewModal = new bootstrap.Modal('#previewModal');
 
@@ -174,13 +166,22 @@
 
                 $('#submitBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Publishing...');
 
-                apiRequest('/api/posts', 'POST', {
+                // Get current user's ID from localStorage
+                const currentUser = getCurrentUser();
+                if (!currentUser || !currentUser.userId) {
+                    showToast('Please log in to create a post', 'danger');
+                    window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                    return;
+                }
+
+                apiPost('/posts', {
                     title: title,
-                    content: content
-                }).then(function (result) {
-                    if (result.isSuccess && result.data) {
+                    content: content,
+                    authorId: currentUser.userId
+                }).then(function (result, textStatus, jqXHR) {
+                    if (jqXHR.status === 201 && result) {
                         showToast('Post published successfully!', 'success');
-                        window.location.href = '/Posts/Details/' + result.data.id;
+                        window.location.href = '/Posts/Details/' + result.id;
                     } else {
                         showToast(result.errors?.join(', ') || 'Failed to create post', 'danger');
                         $('#submitBtn').prop('disabled', false).html('<i class="bi bi-send me-2"></i>Publish Post');
