@@ -74,7 +74,8 @@
 
                         <div class="d-flex justify-content-between align-items-center border-top pt-3">
                             <div class="d-flex align-items-center">
-                                <a href="@Url.Action("Profile", "Users", new { id = Model.OrganizerId })" class="text-decoration-none">
+                                <a href="@Url.Action("Profile", "Users", new { id = Model.OrganizerId })"
+                                    class="text-decoration-none">
                                     <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
                                         style="width: 40px; height: 40px;">
                                         @(Model.OrganizerUsername?.Substring(0, 1).ToUpper() ?? "?")
@@ -83,7 +84,8 @@
                                 <div>
                                     <small class="text-muted">Organized by</small>
                                     <br>
-                                    <a href="@Url.Action("Profile", "Users", new { id = Model.OrganizerId })" class="text-decoration-none text-dark">
+                                    <a href="@Url.Action("Profile", "Users", new { id = Model.OrganizerId })"
+                                        class="text-decoration-none text-dark">
                                         <strong>@Model.OrganizerUsername</strong>
                                     </a>
                                 </div>
@@ -161,10 +163,7 @@
 
 @section Scripts {
     <script>
-        function isAuthenticated() {
-            return @User.Identity.IsAuthenticated.ToString().ToLower();
-        }
-
+        requireLogin();
         const eventId = @(Model?.Id ?? 0);
         const eventOrganizerId = @(Model?.OrganizerId ?? 0);
         const eventTitle = '@Html.Raw(Model?.Title?.Replace("'", "\\\'") ?? "")';
@@ -173,16 +172,16 @@
 
         $(document).ready(function () {
             // Show edit/delete buttons if user is the organizer
-            const currentUserId = localStorage.getItem('userId');
+            const currentUserId = getCurrentUserId();
             if (currentUserId && parseInt(currentUserId) === eventOrganizerId) {
                 $('#eventActions').html(`
-                        <a href="/Events/Edit/${eventId}" class="btn btn-outline-primary btn-sm me-2">
-                            <i class="bi bi-pencil me-1"></i>Edit
-                        </a>
-                        <button class="btn btn-outline-danger btn-sm" onclick="deleteEvent()">
-                            <i class="bi bi-trash me-1"></i>Delete
-                        </button>
-                    `);
+                                        <a href="/Events/Edit/${eventId}" class="btn btn-outline-primary btn-sm me-2">
+                                            <i class="bi bi-pencil me-1"></i>Edit
+                                        </a>
+                                        <button class="btn btn-outline-danger btn-sm" onclick="deleteEvent()">
+                                            <i class="bi bi-trash me-1"></i>Delete
+                                        </button>
+                                    `);
             }
 
             // Add to Calendar
@@ -223,8 +222,8 @@
             }
 
             apiRequest(`/api/events/${eventId}`, 'DELETE')
-                .then(function (result) {
-                    if (result.isSuccess) {
+                .then(function (result, textStatus, jqXHR) {
+                    if (jqXHR.status === 204) {
                         showToast('Event deleted successfully', 'success');
                         window.location.href = '/Events';
                     } else {
