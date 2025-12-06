@@ -2,6 +2,7 @@ using Xunit;
 using FluentAssertions;
 using Moq;
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Models;
 using CommunityWebsite.Core.Repositories.Interfaces;
@@ -121,7 +122,7 @@ public class AdminUserServiceTests
         var users = CreateSampleUsers(3);
         _mockUserRepository
             .Setup(r => r.GetUsersWithStatsAsync(1, 20, null))
-            .ReturnsAsync((users, 3));
+            .ReturnsAsync(new PagedResult<User> { Items = users, TotalCount = 3, PageNumber = 1, PageSize = 20 });
 
         SetupPostAndCommentCounts(users);
 
@@ -130,7 +131,7 @@ public class AdminUserServiceTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().HaveCount(3);
+        result.Data.Items.Should().HaveCount(3);
     }
 
     [Fact]
@@ -173,7 +174,7 @@ public class AdminUserServiceTests
         var users = CreateSampleUsers(2);
         _mockUserRepository
             .Setup(r => r.GetUsersWithStatsAsync(1, 20, "test"))
-            .ReturnsAsync((users, 2));
+            .ReturnsAsync(new PagedResult<User> { Items = users, TotalCount = 2, PageNumber = 1, PageSize = 20 });
 
         SetupPostAndCommentCounts(users);
 
@@ -382,8 +383,8 @@ public class AdminUserServiceTests
             .Setup(r => r.GetRoleByNameAsync("Admin"))
             .ReturnsAsync(adminRole);
         _mockUserRepository
-            .Setup(r => r.GetUsersByRoleAsync("Admin"))
-            .ReturnsAsync(new List<User> { user }); // Only one admin
+            .Setup(r => r.GetUsersByRoleAsync("Admin", It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(new PagedResult<User> { Items = new List<User> { user }, TotalCount = 1, PageNumber = 1, PageSize = 20 });
 
         // Act
         var result = await _adminUserService.RemoveRoleFromUserAsync(1, "Admin");
