@@ -1,4 +1,5 @@
 using Xunit;
+using CommunityWebsite.Core.DTOs;
 using FluentAssertions;
 using Moq;
 using Microsoft.AspNetCore.Mvc;
@@ -72,8 +73,15 @@ public class PostsViewControllerTests
             new() { Id = 2, Title = "Test Post 2", Preview = "Preview 2", CreatedAt = DateTime.UtcNow.AddHours(-1) }
         };
 
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Success(posts));
+        var pagedPosts = new PagedResult<PostSummaryDto>
+        {
+            Items = posts,
+            TotalCount = posts.Count,
+            PageNumber = 1,
+            PageSize = 20
+        };
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Success(pagedPosts));
 
         // Act
         var result = await _controller.Index();
@@ -82,7 +90,7 @@ public class PostsViewControllerTests
         var viewResult = result.Should().BeOfType<ViewResult>().Subject;
         viewResult.ViewName.Should().Be("~/Views/Posts/Index.cshtml");
         var model = viewResult.Model.Should().BeAssignableTo<List<PostDto>>().Subject;
-        model.Should().HaveCount(2);
+        model.Should().HaveCount(posts.Count);
     }
 
     [Fact]
@@ -95,10 +103,24 @@ public class PostsViewControllerTests
         };
 
         // Need to setup featured posts as fallback (controller calls it first)
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Success(new List<PostSummaryDto>()));
-        _mockPostService.Setup(s => s.SearchPostsAsync("test"))
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Success(searchResults));
+        var pagedEmpty = new PagedResult<PostSummaryDto>
+        {
+            Items = new List<PostSummaryDto>(),
+            TotalCount = 0,
+            PageNumber = 1,
+            PageSize = 20
+        };
+        var pagedSearch = new PagedResult<PostSummaryDto>
+        {
+            Items = searchResults,
+            TotalCount = searchResults.Count,
+            PageNumber = 1,
+            PageSize = 20
+        };
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Success(pagedEmpty));
+        _mockPostService.Setup(s => s.SearchPostsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Success(pagedSearch));
 
         // Act
         var result = await _controller.Index(search: "test");
@@ -108,7 +130,7 @@ public class PostsViewControllerTests
         var model = viewResult.Model.Should().BeAssignableTo<List<PostDto>>().Subject;
         model.Should().HaveCount(1);
         model.First().Title.Should().Be("Matching Post");
-        _mockPostService.Verify(s => s.SearchPostsAsync("test"), Times.Once);
+        _mockPostService.Verify(s => s.SearchPostsAsync("test", It.IsAny<int>(), It.IsAny<int>()), Times.Once);
     }
 
     [Fact]
@@ -121,8 +143,15 @@ public class PostsViewControllerTests
             new() { Id = 2, Title = "Newer Post", Preview = "Preview 2", CreatedAt = DateTime.UtcNow }
         };
 
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Success(posts));
+        var pagedPosts = new PagedResult<PostSummaryDto>
+        {
+            Items = posts,
+            TotalCount = posts.Count,
+            PageNumber = 1,
+            PageSize = 20
+        };
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Success(pagedPosts));
 
         // Act
         var result = await _controller.Index(sortBy: "newest");
@@ -143,8 +172,15 @@ public class PostsViewControllerTests
             new() { Id = 2, Title = "Older Post", Preview = "Preview 2", CreatedAt = DateTime.UtcNow.AddDays(-1) }
         };
 
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Success(posts));
+        var pagedPosts = new PagedResult<PostSummaryDto>
+        {
+            Items = posts,
+            TotalCount = posts.Count,
+            PageNumber = 1,
+            PageSize = 20
+        };
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Success(pagedPosts));
 
         // Act
         var result = await _controller.Index(sortBy: "oldest");
@@ -165,8 +201,15 @@ public class PostsViewControllerTests
             new() { Id = 2, Title = "More Popular", Preview = "Preview 2", CommentCount = 20, CreatedAt = DateTime.UtcNow }
         };
 
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Success(posts));
+        var pagedPosts = new PagedResult<PostSummaryDto>
+        {
+            Items = posts,
+            TotalCount = posts.Count,
+            PageNumber = 1,
+            PageSize = 20
+        };
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Success(pagedPosts));
 
         // Act
         var result = await _controller.Index(sortBy: "popular");
@@ -181,10 +224,17 @@ public class PostsViewControllerTests
     public async Task Index_SetsViewBagProperties_Correctly()
     {
         // Arrange
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Success(new List<PostSummaryDto>()));
-        _mockPostService.Setup(s => s.SearchPostsAsync("test"))
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Success(new List<PostSummaryDto>()));
+        var pagedEmpty = new PagedResult<PostSummaryDto>
+        {
+            Items = new List<PostSummaryDto>(),
+            TotalCount = 0,
+            PageNumber = 1,
+            PageSize = 20
+        };
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Success(pagedEmpty));
+        _mockPostService.Setup(s => s.SearchPostsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Success(pagedEmpty));
 
         // Act
         await _controller.Index(search: "test", sortBy: "oldest", page: 2);
@@ -202,8 +252,15 @@ public class PostsViewControllerTests
         var posts = Enumerable.Range(1, 25).Select(i =>
             new PostSummaryDto { Id = i, Title = $"Post {i}", Preview = $"Preview {i}", CreatedAt = DateTime.UtcNow }).ToList();
 
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Success(posts));
+        var pagedPosts = new PagedResult<PostSummaryDto>
+        {
+            Items = posts,
+            TotalCount = posts.Count,
+            PageNumber = 1,
+            PageSize = 25
+        };
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Success(pagedPosts));
 
         // Act
         var result = await _controller.Index(page: 2);
@@ -219,8 +276,8 @@ public class PostsViewControllerTests
     public async Task Index_WhenServiceFails_ReturnsEmptyList()
     {
         // Arrange
-        _mockPostService.Setup(s => s.GetFeaturedPostsAsync())
-            .ReturnsAsync(Result<IEnumerable<PostSummaryDto>>.Failure("Service unavailable"));
+        _mockPostService.Setup(s => s.GetFeaturedPostsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<PostSummaryDto>>.Failure("Service unavailable"));
 
         // Act
         var result = await _controller.Index();
@@ -249,8 +306,14 @@ public class PostsViewControllerTests
 
         _mockPostService.Setup(s => s.GetPostDetailAsync(1))
             .ReturnsAsync(Result<PostDetailDto>.Success(postDetail));
-        _mockCommentService.Setup(s => s.GetPostCommentsAsync(1))
-            .ReturnsAsync(Result<IEnumerable<CommentDto>>.Success(new List<CommentDto>()));
+        _mockCommentService.Setup(s => s.GetPostCommentsAsync(1, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<CommentDto>>.Success(new PagedResult<CommentDto>
+            {
+                Items = new List<CommentDto>(),
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = 0
+            }));
 
         // Act
         var result = await _controller.Details(1);
@@ -289,8 +352,14 @@ public class PostsViewControllerTests
 
         _mockPostService.Setup(s => s.GetPostDetailAsync(1))
             .ReturnsAsync(Result<PostDetailDto>.Success(postDetail));
-        _mockCommentService.Setup(s => s.GetPostCommentsAsync(1))
-            .ReturnsAsync(Result<IEnumerable<CommentDto>>.Success(comments));
+        _mockCommentService.Setup(s => s.GetPostCommentsAsync(1, It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<PagedResult<CommentDto>>.Success(new PagedResult<CommentDto>
+            {
+                Items = comments,
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = comments.Count
+            }));
 
         // Act
         var result = await _controller.Details(1);
