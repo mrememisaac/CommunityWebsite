@@ -28,16 +28,19 @@ public class EventsController : ApiControllerBase
     /// </summary>
     [HttpGet("upcoming")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<EventDto>>> GetUpcomingEvents([FromQuery] int limit = 20)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IEnumerable<EventDto>>> GetUpcomingEvents([FromQuery] int limit = 20, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
     {
-        _logger.LogInformation("GET /api/events/upcoming?limit={Limit}", limit);
+        _logger.LogInformation("GET /api/events/upcoming?limit={Limit}&pageNumber={PageNumber}&pageSize={PageSize}", limit, pageNumber, pageSize);
 
-        var result = await _eventService.GetUpcomingEventsAsync(limit);
+        // Validate limit
+        if (limit < 1 || limit > 100)
+            return BadRequest(new { error = "Limit must be between 1 and 100" });
 
+        var result = await _eventService.GetUpcomingEventsAsync(limit, pageNumber, pageSize);
         if (!result.IsSuccess)
             return BadRequest(new { error = result.ErrorMessage });
-
-        return Ok(result.Data);
+        return Ok(result.Data?.Items ?? new List<EventDto>());
     }
 
     /// <summary>
@@ -45,16 +48,14 @@ public class EventsController : ApiControllerBase
     /// </summary>
     [HttpGet("past")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<EventDto>>> GetPastEvents([FromQuery] int limit = 20)
+    public async Task<ActionResult<IEnumerable<EventDto>>> GetPastEvents([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
     {
-        _logger.LogInformation("GET /api/events/past?limit={Limit}", limit);
+        _logger.LogInformation("GET /api/events/past?pageNumber={PageNumber}&pageSize={PageSize}", pageNumber, pageSize);
 
-        var result = await _eventService.GetPastEventsAsync(limit);
-
+        var result = await _eventService.GetPastEventsAsync(pageNumber, pageSize);
         if (!result.IsSuccess)
             return BadRequest(new { error = result.ErrorMessage });
-
-        return Ok(result.Data);
+        return Ok(result.Data?.Items ?? new List<EventDto>());
     }
 
     /// <summary>
@@ -85,11 +86,9 @@ public class EventsController : ApiControllerBase
     {
         _logger.LogInformation("GET /api/events/organizer/{UserId}", userId);
 
-        var result = await _eventService.GetEventsByOrganizerAsync(userId);
-
+        var result = await _eventService.GetEventsByOrganizerAsync(userId, pageNumber: 1, pageSize: 20);
         if (!result.IsSuccess)
             return NotFound(new { error = result.ErrorMessage });
-
         return Ok(result.Data);
     }
 
