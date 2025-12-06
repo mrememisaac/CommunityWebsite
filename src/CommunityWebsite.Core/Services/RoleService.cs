@@ -1,4 +1,5 @@
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Requests;
 using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Models;
@@ -136,39 +137,42 @@ public class RoleService : IRoleService
     /// <summary>
     /// Gets all roles with user counts and caching
     /// </summary>
-    public async Task<Result<IEnumerable<RoleDto>>> GetAllRolesAsync()
+    public async Task<Result<PagedResult<RoleDto>>> GetAllRolesAsync(int pageNumber = 1, int pageSize = 20)
     {
         try
         {
             _logger.LogInformation("Retrieving all roles");
 
             // Try to get from cache
-            if (_cache.TryGetValue(AllRolesCacheKey, out IEnumerable<RoleDto>? cachedRoles))
+            if (_cache.TryGetValue(AllRolesCacheKey, out PagedResult<RoleDto>? cachedRoles))
             {
                 _logger.LogDebug("All roles retrieved from cache");
-                return Result<IEnumerable<RoleDto>>.Success(cachedRoles!);
+                return Result<PagedResult<RoleDto>>.Success(cachedRoles!);
             }
 
-            var roles = await _roleRepository.GetAllRolesWithUsersAsync();
-
-            var dtos = roles.Select(r => new RoleDto
+            var pagedRoles = await _roleRepository.GetAllRolesWithUsersAsync(pageNumber, pageSize);
+            var dtoResult = new PagedResult<RoleDto>
             {
-                Id = r.Id,
-                Name = r.Name,
-                Description = r.Description,
-                UserCount = r.UserRoles.Count
-            }).ToList();
-
+                Items = pagedRoles.Items.Select(r => new RoleDto
+                {
+                    Id = r.Id,
+                    Name = r.Name,
+                    Description = r.Description,
+                    UserCount = r.UserRoles.Count
+                }).ToList(),
+                TotalCount = pagedRoles.TotalCount,
+                PageNumber = pagedRoles.PageNumber,
+                PageSize = pagedRoles.PageSize
+            };
             // Cache the result
-            _cache.Set(AllRolesCacheKey, (IEnumerable<RoleDto>)dtos, RoleCacheOptions);
+            _cache.Set(AllRolesCacheKey, dtoResult, RoleCacheOptions);
             _logger.LogDebug("All roles cached");
-
-            return Result<IEnumerable<RoleDto>>.Success(dtos);
+            return Result<PagedResult<RoleDto>>.Success(dtoResult);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving all roles");
-            return Result<IEnumerable<RoleDto>>.Failure("An error occurred while retrieving roles.");
+            return Result<PagedResult<RoleDto>>.Failure("An error occurred while retrieving roles.");
         }
     }
 
@@ -324,8 +328,8 @@ public class RoleService : IRoleService
             }
 
             // Check if role has users
-            var usersInRole = await _roleRepository.GetUsersInRoleAsync(roleId);
-            if (usersInRole.Any())
+            var usersPaged = await _roleRepository.GetUsersInRoleAsync(roleId, 1, 100);
+            if (usersPaged.Items.Any())
             {
                 return Result.Failure("Cannot delete role that has users assigned. Remove users from role first.");
             }
@@ -353,7 +357,7 @@ public class RoleService : IRoleService
     /// <summary>
     /// Gets users in a role by role ID
     /// </summary>
-    public async Task<Result<IEnumerable<UserSummaryDto>>> GetUsersInRoleAsync(int roleId)
+    public async Task<Result<PagedResult<UserSummaryDto>>> GetUsersInRoleAsync(int roleId, int pageNumber = 1, int pageSize = 20)
     {
         try
         {
@@ -361,36 +365,40 @@ public class RoleService : IRoleService
 
             if (roleId <= 0)
             {
-                return Result<IEnumerable<UserSummaryDto>>.Failure("Invalid role ID");
+                return Result<PagedResult<UserSummaryDto>>.Failure("Invalid role ID");
             }
 
             var role = await _roleRepository.GetByIdAsync(roleId);
             if (role == null)
             {
-                return Result<IEnumerable<UserSummaryDto>>.Failure("Role not found");
+                return Result<PagedResult<UserSummaryDto>>.Failure("Role not found");
             }
 
-            var users = await _roleRepository.GetUsersInRoleAsync(roleId);
-
-            var dtos = users.Select(u => new UserSummaryDto
+            var pagedResult = await _roleRepository.GetUsersInRoleAsync(roleId, pageNumber, pageSize);
+            var dtos = pagedResult.Items.Select(u => new UserSummaryDto
             {
                 Id = u.Id,
                 Username = u.Username
+            }).ToList();
+            return Result<PagedResult<UserSummaryDto>>.Success(new PagedResult<UserSummaryDto>
+            {
+                Items = dtos,
+                TotalCount = pagedResult.TotalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
             });
-
-            return Result<IEnumerable<UserSummaryDto>>.Success(dtos);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving users in role {RoleId}", roleId);
-            return Result<IEnumerable<UserSummaryDto>>.Failure("An error occurred while retrieving users.");
+            return Result<PagedResult<UserSummaryDto>>.Failure("An error occurred while retrieving users.");
         }
     }
 
     /// <summary>
     /// Gets users in a role by role name
     /// </summary>
-    public async Task<Result<IEnumerable<UserSummaryDto>>> GetUsersInRoleByNameAsync(string roleName)
+    public async Task<Result<PagedResult<UserSummaryDto>>> GetUsersInRoleByNameAsync(string roleName, int pageNumber = 1, int pageSize = 20)
     {
         try
         {
@@ -398,29 +406,33 @@ public class RoleService : IRoleService
 
             if (string.IsNullOrWhiteSpace(roleName))
             {
-                return Result<IEnumerable<UserSummaryDto>>.Failure("Role name is required");
+                return Result<PagedResult<UserSummaryDto>>.Failure("Role name is required");
             }
 
             var role = await _roleRepository.GetRoleByNameAsync(roleName);
             if (role == null)
             {
-                return Result<IEnumerable<UserSummaryDto>>.Failure("Role not found");
+                return Result<PagedResult<UserSummaryDto>>.Failure("Role not found");
             }
 
-            var users = await _roleRepository.GetUsersInRoleAsync(role.Id);
-
-            var dtos = users.Select(u => new UserSummaryDto
+            var pagedResult = await _roleRepository.GetUsersInRoleAsync(role.Id, pageNumber, pageSize);
+            var dtos = pagedResult.Items.Select(u => new UserSummaryDto
             {
                 Id = u.Id,
                 Username = u.Username
+            }).ToList();
+            return Result<PagedResult<UserSummaryDto>>.Success(new PagedResult<UserSummaryDto>
+            {
+                Items = dtos,
+                TotalCount = pagedResult.TotalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
             });
-
-            return Result<IEnumerable<UserSummaryDto>>.Success(dtos);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving users in role {RoleName}", roleName);
-            return Result<IEnumerable<UserSummaryDto>>.Failure("An error occurred while retrieving users.");
+            return Result<PagedResult<UserSummaryDto>>.Failure("An error occurred while retrieving users.");
         }
     }
 
