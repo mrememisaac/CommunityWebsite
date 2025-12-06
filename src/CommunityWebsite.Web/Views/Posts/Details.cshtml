@@ -90,7 +90,7 @@
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div class="d-flex align-items-center">
                                                 <a href="@Url.Action("Profile", "Users", new { id = comment.AuthorId })" class="text-decoration-none">
-                                                    <div class="avatar-sm bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                    <div class="author-avatar-sm bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
                                                         @(comment.AuthorUsername?.Substring(0, 1).ToUpper() ?? "?")
                                                     </div>
                                                 </a>
@@ -167,16 +167,14 @@
 
 @section Scripts {
     <script>
-        function isAuthenticated() {
-            return @User.Identity.IsAuthenticated.ToString().ToLower();
-        }
+        const isAuthenticated = isLoggedIn();
 
         const postId = @(Model?.Id ?? 0);
         const postAuthorId = @(Model?.AuthorId ?? 0);
 
         $(document).ready(function() {
             // Check authentication for comment form
-            if (!isAuthenticated()) {
+            if (!isAuthenticated) {
                 $('#addCommentSection').html(`
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle me-2"></i>
@@ -186,7 +184,7 @@
             }
 
             // Show edit/delete buttons if user is the author
-            const currentUserId = localStorage.getItem('userId');
+            const currentUserId = getCurrentUser().userId;
             if (currentUserId && parseInt(currentUserId) === postAuthorId) {
                 $('#postActions').html(`
                     <a href="/Posts/Edit/${postId}" class="btn btn-outline-primary btn-sm me-2">
@@ -203,12 +201,12 @@
                 e.preventDefault();
                 const content = $('#commentContent').val().trim();
                 if (!content) return;
-
-                apiRequest(`/api/comments`, 'POST', {
-                    postId: postId,
-                    content: content
-                }).then(function(result) {
-                    if (result.isSuccess) {
+                console.log({content, authorId: currentUserId, parentCommentId: 0});
+                apiPost(`/posts/${postId}/comments`, {
+                    content: content,
+                    authorId: currentUserId,
+                }).then(function(result, textStatus, jqXHR) {
+                    if (jqXHR.status === 201 && result) {
                         showToast('Comment posted successfully!', 'success');
                         location.reload();
                     } else {
@@ -225,9 +223,9 @@
                 return;
             }
 
-            apiRequest(`/api/posts/${postId}`, 'DELETE')
-                .then(function(result) {
-                    if (result.isSuccess) {
+            apiDelete(`/posts/${postId}`)
+                .then(function(result, textStatus, jqXHR) {
+                    if (jqXHR.status === 204) {
                         showToast('Post deleted successfully', 'success');
                         window.location.href = '/Posts';
                     } else {
