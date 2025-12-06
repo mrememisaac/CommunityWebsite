@@ -1,4 +1,5 @@
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Requests;
 using CommunityWebsite.Core.DTOs.Responses;
 
@@ -10,7 +11,7 @@ namespace CommunityWebsite.Core.Services.Interfaces;
 /// </summary>
 public interface ICommentService
 {
-    Task<Result<IEnumerable<CommentDto>>> GetPostCommentsAsync(int postId);
+    Task<Result<PagedResult<CommentDto>>> GetPostCommentsAsync(int postId, int pageNumber = 1, int pageSize = 20);
     Task<Result<CommentDetailDto>> GetCommentDetailAsync(int commentId);
     Task<Result<CommentDto>> CreateCommentAsync(int postId, CreateCommentRequest request);
     Task<Result<CommentDto>> UpdateCommentAsync(int commentId, UpdateCommentRequest request);

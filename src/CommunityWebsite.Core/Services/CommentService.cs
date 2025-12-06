@@ -40,7 +40,7 @@ public class CommentService : ICommentService
     /// <summary>
     /// Gets all comments for a specific post
     /// </summary>
-    public async Task<Result<IEnumerable<CommentDto>>> GetPostCommentsAsync(int postId)
+    public async Task<Result<PagedResult<CommentDto>>> GetPostCommentsAsync(int postId, int pageNumber = 1, int pageSize = 20)
     {
         try
         {
@@ -50,31 +50,33 @@ public class CommentService : ICommentService
             var post = await _postRepository.GetByIdAsync(postId);
             if (post == null || post.IsDeleted)
             {
-                return Result<IEnumerable<CommentDto>>.Failure("Post not found");
+                return Result<PagedResult<CommentDto>>.Failure("Post not found");
             }
 
-            var comments = await _commentRepository.GetPostCommentsAsync(postId);
-
-            var result = comments
-                .Select(c => c.ToCommentDto())
-                .ToList();
-
-            return Result<IEnumerable<CommentDto>>.Success(result);
+            var pagedComments = await _commentRepository.GetPostCommentsAsync(postId, pageNumber, pageSize);
+            var dtoResult = new PagedResult<CommentDto>
+            {
+                Items = pagedComments.Items.Select(c => c.ToCommentDto()).ToList(),
+                TotalCount = pagedComments.TotalCount,
+                PageNumber = pagedComments.PageNumber,
+                PageSize = pagedComments.PageSize
+            };
+            return Result<PagedResult<CommentDto>>.Success(dtoResult);
         }
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error retrieving comments for post {PostId}", postId);
-            return Result<IEnumerable<CommentDto>>.Failure("Database error occurred while retrieving comments.");
+            return Result<PagedResult<CommentDto>>.Failure("Database error occurred while retrieving comments.");
         }
         catch (OperationCanceledException ex)
         {
             _logger.LogWarning(ex, "Request timeout retrieving comments for post {PostId}", postId);
-            return Result<IEnumerable<CommentDto>>.Failure("Request timeout while retrieving comments.");
+            return Result<PagedResult<CommentDto>>.Failure("Request timeout while retrieving comments.");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error retrieving comments for post {PostId}", postId);
-            return Result<IEnumerable<CommentDto>>.Failure("An error occurred while retrieving comments.");
+            return Result<PagedResult<CommentDto>>.Failure("An error occurred while retrieving comments.");
         }
     }
 
