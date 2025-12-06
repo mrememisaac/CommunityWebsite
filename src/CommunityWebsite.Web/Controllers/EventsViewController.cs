@@ -36,12 +36,12 @@ public class EventsViewController : ViewControllerBase
         if (period == "past")
         {
             var result = await _eventService.GetPastEventsAsync(100);
-            events = result.Data ?? new List<EventDto>();
+            events = result.Data?.Items ?? new List<EventDto>();
         }
         else
         {
             var result = await _eventService.GetUpcomingEventsAsync(100);
-            events = result.Data ?? new List<EventDto>();
+            events = result.Data?.Items ?? new List<EventDto>();
         }
 
         var eventList = events.ToList();
