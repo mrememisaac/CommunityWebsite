@@ -1,4 +1,5 @@
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Requests;
 using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Models;
@@ -69,8 +70,8 @@ public class UserService : IUserService
             var postCountCacheKey = $"{UserPostCountCacheKeyPrefix}{userId}";
             if (!_cache.TryGetValue(postCountCacheKey, out int postCount))
             {
-                var posts = await _postRepository.GetUserPostsAsync(userId);
-                postCount = posts.Count();
+                var pagedPosts = await _postRepository.GetUserPostsAsync(userId);
+                postCount = pagedPosts.TotalCount;
 
                 // Cache the result
                 _cache.Set(postCountCacheKey, postCount, UserStatsCacheOptions);
@@ -119,7 +120,7 @@ public class UserService : IUserService
             }
 
             var userWithRoles = await _userRepository.GetUserWithRolesAsync(user.Id);
-            var posts = await _postRepository.GetUserPostsAsync(user.Id);
+            var pagedPosts = await _postRepository.GetUserPostsAsync(user.Id);
 
             var profile = new UserProfileDto
             {
@@ -129,7 +130,7 @@ public class UserService : IUserService
                 Bio = user.Bio,
                 ProfileImageUrl = user.ProfileImageUrl,
                 CreatedAt = user.CreatedAt,
-                PostCount = posts.Count(),
+                PostCount = pagedPosts.TotalCount,
                 Roles = userWithRoles?.UserRoles.Select(ur => ur.Role.Name).ToList() ?? new List<string>()
             };
 
@@ -163,7 +164,7 @@ public class UserService : IUserService
             }
 
             var userWithRoles = await _userRepository.GetUserWithRolesAsync(user.Id);
-            var posts = await _postRepository.GetUserPostsAsync(user.Id);
+            var pagedPosts = await _postRepository.GetUserPostsAsync(user.Id);
 
             var profile = new UserProfileDto
             {
@@ -173,7 +174,7 @@ public class UserService : IUserService
                 Bio = user.Bio,
                 ProfileImageUrl = user.ProfileImageUrl,
                 CreatedAt = user.CreatedAt,
-                PostCount = posts.Count(),
+                PostCount = pagedPosts.TotalCount,
                 Roles = userWithRoles?.UserRoles.Select(ur => ur.Role.Name).ToList() ?? new List<string>()
             };
 
@@ -189,7 +190,7 @@ public class UserService : IUserService
     /// <summary>
     /// Gets active users with pagination
     /// </summary>
-    public async Task<Result<IEnumerable<UserSummaryDto>>> GetActiveUsersAsync(int pageNumber = 1, int pageSize = 20)
+    public async Task<Result<PagedResult<UserSummaryDto>>> GetActiveUsersAsync(int pageNumber, int pageSize)
     {
         try
         {
@@ -197,35 +198,39 @@ public class UserService : IUserService
 
             if (pageNumber < 1)
             {
-                return Result<IEnumerable<UserSummaryDto>>.Failure("Page number must be at least 1");
+                return Result<PagedResult<UserSummaryDto>>.Failure("Page number must be at least 1");
             }
 
             if (pageSize < 1 || pageSize > 100)
             {
-                return Result<IEnumerable<UserSummaryDto>>.Failure("Page size must be between 1 and 100");
+                return Result<PagedResult<UserSummaryDto>>.Failure("Page size must be between 1 and 100");
             }
 
-            var users = await _userRepository.GetActiveUsersAsync(pageNumber, pageSize);
-
-            var result = users.Select(u => new UserSummaryDto
+            var pagedUsers = await _userRepository.GetActiveUsersAsync(pageNumber, pageSize);
+            var dtoResult = new PagedResult<UserSummaryDto>
             {
-                Id = u.Id,
-                Username = u.Username
-            });
-
-            return Result<IEnumerable<UserSummaryDto>>.Success(result);
+                Items = pagedUsers.Items.Select(u => new UserSummaryDto
+                {
+                    Id = u.Id,
+                    Username = u.Username
+                }).ToList(),
+                TotalCount = pagedUsers.TotalCount,
+                PageNumber = pagedUsers.PageNumber,
+                PageSize = pagedUsers.PageSize
+            };
+            return Result<PagedResult<UserSummaryDto>>.Success(dtoResult);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving active users");
-            return Result<IEnumerable<UserSummaryDto>>.Failure("An error occurred while retrieving users.");
+            return Result<PagedResult<UserSummaryDto>>.Failure("An error occurred while retrieving users.");
         }
     }
 
     /// <summary>
     /// Gets users by role name
     /// </summary>
-    public async Task<Result<IEnumerable<UserSummaryDto>>> GetUsersByRoleAsync(string roleName)
+    public async Task<Result<PagedResult<UserSummaryDto>>> GetUsersByRoleAsync(string roleName, int pageNumber, int pageSize)
     {
         try
         {
@@ -233,23 +238,27 @@ public class UserService : IUserService
 
             if (string.IsNullOrWhiteSpace(roleName))
             {
-                return Result<IEnumerable<UserSummaryDto>>.Failure("Role name is required");
+                return Result<PagedResult<UserSummaryDto>>.Failure("Role name is required");
             }
 
-            var users = await _userRepository.GetUsersByRoleAsync(roleName);
-
-            var result = users.Select(u => new UserSummaryDto
+            var pagedUsers = await _userRepository.GetUsersByRoleAsync(roleName, pageNumber, pageSize);
+            var dtoResult = new PagedResult<UserSummaryDto>
             {
-                Id = u.Id,
-                Username = u.Username
-            });
-
-            return Result<IEnumerable<UserSummaryDto>>.Success(result);
+                Items = pagedUsers.Items.Select(u => new UserSummaryDto
+                {
+                    Id = u.Id,
+                    Username = u.Username
+                }).ToList(),
+                TotalCount = pagedUsers.TotalCount,
+                PageNumber = pagedUsers.PageNumber,
+                PageSize = pagedUsers.PageSize
+            };
+            return Result<PagedResult<UserSummaryDto>>.Success(dtoResult);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving users by role {RoleName}", roleName);
-            return Result<IEnumerable<UserSummaryDto>>.Failure("An error occurred while retrieving users.");
+            return Result<PagedResult<UserSummaryDto>>.Failure("An error occurred while retrieving users.");
         }
     }
 
