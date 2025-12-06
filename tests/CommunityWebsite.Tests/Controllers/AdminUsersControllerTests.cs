@@ -4,6 +4,7 @@ using Moq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using CommunityWebsite.Core.Common;
+using CommunityWebsite.Core.DTOs;
 using CommunityWebsite.Core.DTOs.Responses;
 using CommunityWebsite.Core.Services.Interfaces;
 using CommunityWebsite.Web.Controllers;
@@ -33,17 +34,24 @@ public class AdminUsersControllerTests
     {
         // Arrange
         var users = CreateSampleAdminUserDtos(3);
+        var pagedResult = new PagedResult<AdminUserDto>
+        {
+            Items = users,
+            TotalCount = 3,
+            PageNumber = 1,
+            PageSize = 20
+        };
         _mockAdminUserService
             .Setup(s => s.GetAllUsersAsync(1, 20, null))
-            .ReturnsAsync(Result<IEnumerable<AdminUserDto>>.Success(users));
+            .ReturnsAsync(Result<PagedResult<AdminUserDto>>.Success(pagedResult));
 
         // Act
         var result = await _controller.GetAllUsers();
 
         // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        var returnedUsers = okResult.Value.Should().BeAssignableTo<IEnumerable<AdminUserDto>>().Subject;
-        returnedUsers.Should().HaveCount(3);
+        var returnedData = okResult.Value.Should().BeOfType<PagedResult<AdminUserDto>>().Subject;
+        returnedData.Items.Should().HaveCount(3);
     }
 
     [Fact]
@@ -51,9 +59,16 @@ public class AdminUsersControllerTests
     {
         // Arrange
         var users = CreateSampleAdminUserDtos(1);
+        var pagedResult = new PagedResult<AdminUserDto>
+        {
+            Items = users,
+            TotalCount = 1,
+            PageNumber = 1,
+            PageSize = 20
+        };
         _mockAdminUserService
             .Setup(s => s.GetAllUsersAsync(1, 20, "test"))
-            .ReturnsAsync(Result<IEnumerable<AdminUserDto>>.Success(users));
+            .ReturnsAsync(Result<PagedResult<AdminUserDto>>.Success(pagedResult));
 
         // Act
         await _controller.GetAllUsers(searchTerm: "test");
@@ -67,9 +82,16 @@ public class AdminUsersControllerTests
     {
         // Arrange
         var users = CreateSampleAdminUserDtos(2);
+        var pagedResult = new PagedResult<AdminUserDto>
+        {
+            Items = users,
+            TotalCount = 5,
+            PageNumber = 2,
+            PageSize = 10
+        };
         _mockAdminUserService
             .Setup(s => s.GetAllUsersAsync(2, 10, null))
-            .ReturnsAsync(Result<IEnumerable<AdminUserDto>>.Success(users));
+            .ReturnsAsync(Result<PagedResult<AdminUserDto>>.Success(pagedResult));
 
         // Act
         await _controller.GetAllUsers(pageNumber: 2, pageSize: 10);
@@ -84,7 +106,7 @@ public class AdminUsersControllerTests
         // Arrange
         _mockAdminUserService
             .Setup(s => s.GetAllUsersAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string?>()))
-            .ReturnsAsync(Result<IEnumerable<AdminUserDto>>.Failure("Error message"));
+            .ReturnsAsync(Result<PagedResult<AdminUserDto>>.Failure("Error message"));
 
         // Act
         var result = await _controller.GetAllUsers();
