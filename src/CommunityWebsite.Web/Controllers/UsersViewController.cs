@@ -26,20 +26,29 @@ public class UsersViewController : Controller
     }
 
     /// <summary>
-    /// Display list of all users (Members page)
+    /// Display list of all users (Members page) with pagination
     /// </summary>
     [HttpGet("/users")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int page = 1, string? search = null)
     {
-        var users = await _userRepository.GetAllAsync();
-        var userDtos = users.Select(u => new UserProfileDto
-        {
-            Id = u.Id,
-            Username = u.Username,
-            Email = u.Email,
-            ProfileImageUrl = u.ProfileImageUrl,
-            CreatedAt = u.CreatedAt
-        }).OrderBy(u => u.Username).ToList();
+        const int pageSize = 12;
+        var result = await _userRepository.GetUsersWithStatsAsync(page, pageSize, search);
+
+        var userDtos = result.Items
+            .Select(u => new UserProfileDto
+            {
+                Id = u.Id,
+                Username = u.Username,
+                Email = u.Email,
+                ProfileImageUrl = u.ProfileImageUrl,
+                CreatedAt = u.CreatedAt
+            })
+            .OrderBy(u => u.Username)
+            .ToList();
+
+        ViewBag.Search = search;
+        ViewBag.CurrentPage = page;
+        ViewBag.TotalPages = (int)Math.Ceiling((double)result.TotalCount / pageSize);
 
         return View("~/Views/Users/Index.cshtml", userDtos);
     }    /// <summary>
@@ -54,7 +63,8 @@ public class UsersViewController : Controller
             return NotFound();
         }
 
-        var posts = await _postRepository.GetUserPostsAsync(id);
+        var pagedResult = await _postRepository.GetUserPostsAsync(id);
+        var orderedPosts = pagedResult.Items.OrderByDescending(p => p.CreatedAt);
         var postCount = await _postRepository.GetPostCountAsync(id);
 
         var userProfile = new UserProfileDto
@@ -70,7 +80,7 @@ public class UsersViewController : Controller
         };
 
         // Get recent posts for the profile page (limit to configured amount)
-        var recentPosts = posts
+        var recentPosts = pagedResult.Items
             .OrderByDescending(p => p.CreatedAt)
             .Take(PaginationDefaults.RecentPostsLimit)
             .Select(p => p.ToSummaryDto())
